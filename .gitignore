@@ -1,0 +1,12 @@
+node_modules
+dist
+.env.local
+api/config.local.php
+*.log
+.DS_Store
+
+# Media design references & personal documents
+*.mp4
+*.docx
+*.pdf
+

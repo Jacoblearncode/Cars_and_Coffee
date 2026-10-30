@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="Roast & Redline — Cars & Coffee PWA Icon">
+  <rect width="512" height="512" rx="112" fill="#11100E"/>
+  <rect x="24" y="24" width="464" height="464" rx="92" stroke="#FF5500" stroke-width="8" stroke-opacity="0.4"/>
+  <!-- Tachometer Redline Arc -->
+  <path d="M104 308 A 162 162 0 1 1 408 308" stroke="#2D2926" stroke-width="24" stroke-linecap="round"/>
+  <path d="M290 98 A 162 162 0 0 1 408 308" stroke="#FF5500" stroke-width="24" stroke-linecap="round"/>
+  <!-- Twin Racing Stripes -->
+  <path d="M170 86 L136 204" stroke="#FF5500" stroke-width="16" stroke-linecap="round"/>
+  <path d="M208 86 L174 204" stroke="#F4EFE6" stroke-width="12" stroke-linecap="round" stroke-opacity="0.85"/>
+  <!-- Tachometer Needle -->
+  <path d="M256 280 L350 152" stroke="#FF5500" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="256" cy="280" r="24" fill="#F4EFE6"/>
+  <!-- Espresso Cup Crest Base -->
+  <path d="M136 274 H350 V324 C350 377.019 307.019 420 254 420 H232 C178.981 420 136 377.019 136 324 V274 Z" fill="#F4EFE6"/>
+  <path d="M350 290 H376 C397.091 290 414 306.909 414 328 C414 349.091 397.091 366 376 366 H350 V290 Z" stroke="#FF5500" stroke-width="22"/>
+  <path d="M164 316 H322" stroke="#FF5500" stroke-width="16" stroke-linecap="round"/>
+</svg>

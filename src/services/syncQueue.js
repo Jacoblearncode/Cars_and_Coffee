@@ -95,10 +95,13 @@ export function classifyAction(method, endpoint, body = {}) {
  */
 export function enqueue(method, endpoint, body = {}, meta = {}) {
   const queue = readQueue()
-  const { type, key } = classifyAction(method, endpoint, body)
+  const { type, key: rawKey } = classifyAction(method, endpoint, body)
+  const userId = meta.user_id !== undefined ? meta.user_id : null
+  const key = rawKey && userId !== null ? `u${userId}:${rawKey}` : rawKey
   const now = new Date().toISOString()
   const entry = {
     id: newId(),
+    user_id: userId,
     method: String(method).toUpperCase(),
     endpoint,
     body,
@@ -228,14 +231,20 @@ async function replayLike(item, send, result) {
  * Replay the queue in order. Returns { synced, remaining, conflicts, serverState, stopped }.
  * `stopped` is null, or the reason the replay paused ('network' | 'auth' | 'server').
  */
-export async function replayQueue(send) {
+export async function replayQueue(send, options = {}) {
   const queue = readQueue()
+  const activeUserId = options.userId !== undefined ? options.userId : null
   const result = { synced: 0, remaining: 0, conflicts: [], serverState: [], stopped: null }
   const remaining = []
 
   for (let i = 0; i < queue.length; i += 1) {
     const item = queue[i]
     if (result.stopped) {
+      remaining.push(item)
+      continue
+    }
+    // If queued by a specific user and a different user is currently active, defer replay
+    if (activeUserId !== null && item.user_id !== null && item.user_id !== activeUserId) {
       remaining.push(item)
       continue
     }

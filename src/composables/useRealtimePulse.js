@@ -15,7 +15,7 @@ import { useToast } from './useToast'
  * Can be toggled ON/PAUSE or triggered on demand via "+1 Live Event" for demonstrations.
  */
 
-const isLiveEnabled = ref(true)
+const isLiveEnabled = ref(false)
 const liveEventsLog = ref([])
 const pulseCounter = ref(0)
 let timerId = null
@@ -265,31 +265,7 @@ export function useRealtimePulse() {
   }
 
   function init() {
-    if (initialized || typeof window === 'undefined') return
-    initialized = true
-    // Seed 2 initial live stream ticker items immediately so the ticker looks populated on load
-    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    liveEventsLog.value = [
-      {
-        id: 'init-1',
-        kind: 'rsvp',
-        badge: 'ROLL-CALL RSVP',
-        region: 'Australia',
-        text: 'Syed A. locked in 2019 Porsche 911 Carrera S for St Kilda Pier Sunrise Espresso',
-        targetRoute: '/meets/1',
-        time: nowStr
-      },
-      {
-        id: 'init-2',
-        kind: 'meet',
-        badge: '108+ MEETS LIVE',
-        region: 'Malaysia',
-        text: 'Glenmarie Artisan Roast & Kuching Waterfront Kopi rosters open for registration',
-        targetRoute: '/meets',
-        time: nowStr
-      }
-    ]
-    startTimer()
+    // Background simulation disabled to keep application state authentic
   }
 
   return {

@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMeetStore } from '../stores/meetStore'
 import { useAuthStore } from '../stores/authStore'
 import { useToast } from '../composables/useToast'
-import { useRealtimePulse } from '../composables/useRealtimePulse'
 import MeetCard from '../components/MeetCard.vue'
 import PaginationBar from '../components/PaginationBar.vue'
 import { MEET_VIBES } from '../data/seedData'
@@ -14,7 +13,6 @@ const router = useRouter()
 const meetStore = useMeetStore()
 const authStore = useAuthStore()
 const { showToast } = useToast()
-const { isLiveEnabled, liveEventsLog, toggleLiveStream, triggerPulseNow } = useRealtimePulse()
 
 const searchQuery = ref(route.query.search || '')
 const selectedVibe = ref(route.query.vibe || 'All')
@@ -38,11 +36,6 @@ async function loadMeets() {
     lat: userCoords.value.lat,
     lng: userCoords.value.lng
   })
-}
-
-async function handleLiveBurst() {
-  await triggerPulseNow()
-  await loadMeets()
 }
 
 function useBrowserLocation() {
@@ -112,11 +105,11 @@ onMounted(() => {
 
 <template>
   <div class="container">
-    <header class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3 cc-rise">
+    <header class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4 cc-rise">
       <div>
-        <span class="cc-bracket-label">[ 02 // COMMUNITY DIRECTORY &amp; LIVE DISPATCH ]</span>
+        <span class="cc-bracket-label">[ 02 // COMMUNITY DIRECTORY ]</span>
         <h1 class="display-6 fw-bold mt-1 mb-1">
-          Meets Board ({{ meetStore.pagination.total }} Listings)
+          Meets Directory ({{ meetStore.pagination.total }} Listings)
         </h1>
         <p class="text-secondary small mb-0">
           Morning espresso runs, rooftop golden-hour meets, and JDM/Euro gatherings across Melbourne
@@ -124,13 +117,6 @@ onMounted(() => {
         </p>
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <button
-          type="button"
-          class="btn btn-sm btn-cc-outline rounded-pill"
-          @click="handleLiveBurst"
-        >
-          <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Simulate Live Event
-        </button>
         <button type="button" class="btn btn-sm btn-cc-outline rounded-pill" @click="useBrowserLocation">
           <i class="bi bi-crosshair me-1 text-warning"></i>Near me
         </button>
@@ -139,37 +125,6 @@ onMounted(() => {
         </router-link>
       </div>
     </header>
-
-    <!-- Recent Real-Time Activity Strip -->
-    <div
-      v-if="liveEventsLog.length > 0"
-      class="cc-tile py-2 px-3 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-2"
-    >
-      <div class="d-flex align-items-center gap-2 overflow-hidden">
-        <span
-          class="badge rounded-pill font-mono"
-          :class="isLiveEnabled ? 'text-bg-success' : 'text-bg-secondary'"
-        >
-          <i class="bi me-1" :class="isLiveEnabled ? 'bi-broadcast-pin' : 'bi-pause-fill'"></i>
-          {{ isLiveEnabled ? 'REAL-TIME STREAM' : 'STREAM PAUSED' }}
-        </span>
-        <span class="badge cc-badge-accent font-mono">{{ liveEventsLog[0].badge }}</span>
-        <router-link
-          :to="liveEventsLog[0].targetRoute"
-          class="small fw-semibold text-reset text-decoration-none text-truncate"
-        >
-          {{ liveEventsLog[0].text }}
-        </router-link>
-      </div>
-      <button
-        type="button"
-        class="btn btn-sm btn-cc-outline rounded-pill py-0 px-2 font-mono"
-        style="font-size: 0.72rem"
-        @click="toggleLiveStream"
-      >
-        {{ isLiveEnabled ? 'Pause Auto-Stream' : 'Resume Auto-Stream' }}
-      </button>
-    </div>
 
     <div class="row g-4">
       <!-- Filter sidebar -->

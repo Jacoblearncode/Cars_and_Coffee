@@ -178,10 +178,10 @@ onMounted(async () => {
     <section v-if="!isEditMode" class="cc-tile mb-4 border-warning border-opacity-50">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
         <div>
-          <span class="cc-bracket-label mb-1">[ AUTO-SCRAPER ]</span>
-          <h2 class="h6 fw-bold mb-0">Smart Event Link Importer (Optional)</h2>
+          <span class="cc-bracket-label mb-1">[ EVENT LINK AUTO-FILL ]</span>
+          <h2 class="h6 fw-bold mb-0">Event Link Auto-Fill (Optional)</h2>
         </div>
-        <span class="badge cc-badge-accent font-mono">PHP OpenGraph + 2026 Presets</span>
+        <span class="badge cc-badge-accent font-mono">Smart Link Auto-Fill</span>
       </div>
       <p class="small text-secondary mb-3">
         Found a Cars &amp; Coffee flyer on Instagram, Facebook Events, or Peatix? Paste the link
@@ -261,9 +261,9 @@ onMounted(async () => {
             <div class="d-flex justify-content-between align-items-center mb-2">
               <label for="cafe-lookup" class="form-label small fw-bold mb-0">
                 <i class="bi bi-search text-warning me-1"></i>
-                Live "Find a Cafe / Parking Spot" Search (OpenStreetMap Nominatim API)
+                Find a Cafe / Venue Search
               </label>
-              <span class="badge cc-badge-accent font-mono">AU &amp; MY Geocoder</span>
+              <span class="badge cc-badge-accent font-mono">Venue Search</span>
             </div>
             <div class="input-group input-group-sm">
               <input

@@ -19,7 +19,7 @@ const form = ref({
 })
 
 const availableModels = ref([])
-const modelSourceLabel = ref('NHTSA vPIC API')
+const modelSourceLabel = ref('Vehicle Registry')
 const allMeets = ref([])
 
 const myHostedMeets = computed(() => {
@@ -36,7 +36,7 @@ async function loadCarModels(make) {
   if (!make) return
   const res = await fetchVehicleModelsForMake(make)
   availableModels.value = res.models
-  modelSourceLabel.value = res.source
+  modelSourceLabel.value = res.source.includes('NHTSA') ? 'Vehicle Registry' : res.source
   if (!availableModels.value.includes(form.value.car_model)) {
     form.value.car_model = availableModels.value[0] || ''
   }

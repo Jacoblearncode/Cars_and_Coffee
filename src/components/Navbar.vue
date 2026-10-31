@@ -4,18 +4,42 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useOfflineSync } from '../composables/useOfflineSync'
-import { useRealtimePulse } from '../composables/useRealtimePulse'
+import { useToast } from '../composables/useToast'
 import BrandLogo from './BrandLogo.vue'
 import CommandSearchModal from './CommandSearchModal.vue'
+import AppIcon from './AppIcon.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
-const { vaultCount, isOnline, canInstallPwa, promptPwaInstall } = useOfflineSync()
-const { isLiveEnabled, toggleLiveStream, triggerPulseNow } = useRealtimePulse()
+const { vaultCount, canInstallPwa, isInstalledPwa, promptPwaInstall } = useOfflineSync()
+const { showToast } = useToast()
 
 const mobileMenuOpen = ref(false)
 const searchModalOpen = ref(false)
+const installing = ref(false)
+
+async function handleInstallApp() {
+  if (installing.value) return
+  installing.value = true
+  try {
+    if (canInstallPwa.value) {
+      const outcome = await promptPwaInstall()
+      if (outcome) {
+        showToast('Roast & Redline installed successfully!', 'success')
+      }
+    } else {
+      showToast(
+        'To install Roast & Redline: click the Install icon in your browser address bar (top right) or browser menu (⋮) > "Install Roast & Redline".',
+        'info'
+      )
+    }
+  } catch (err) {
+    showToast('Install prompt error: ' + (err.message || err), 'warning')
+  } finally {
+    installing.value = false
+  }
+}
 
 function closeMenu() {
   mobileMenuOpen.value = false
@@ -80,36 +104,45 @@ onUnmounted(() => {
           <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-1">
             <li class="nav-item">
               <router-link to="/" class="nav-link px-3" @click="closeMenu">
-                <i class="bi bi-house-door me-1"></i>Home
+                <AppIcon name="home" class="me-1" />Home
               </router-link>
             </li>
             <li class="nav-item">
               <router-link to="/meets" class="nav-link px-3" @click="closeMenu">
-                <i class="bi bi-calendar2-event me-1"></i>Meets
+                <AppIcon name="meets" class="me-1" />Meets
               </router-link>
             </li>
             <li class="nav-item">
               <router-link to="/feed" class="nav-link px-3" @click="closeMenu">
-                <i class="bi bi-camera me-1"></i>Spotting
+                <AppIcon name="spotting" class="me-1" />Spotting
               </router-link>
             </li>
             <li class="nav-item">
               <router-link to="/map" class="nav-link px-3" @click="closeMenu">
-                <i class="bi bi-geo-alt me-1"></i>Map &amp; Calendar
+                <AppIcon name="map" class="me-1" />Map &amp; Calendar
               </router-link>
             </li>
             <li class="nav-item">
               <router-link to="/insights" class="nav-link px-3" @click="closeMenu">
-                <i class="bi bi-bar-chart-line me-1"></i>Insights
+                <AppIcon name="insights" class="me-1" />Insights
               </router-link>
             </li>
             <li class="nav-item">
               <router-link to="/saved" class="nav-link px-3" @click="closeMenu">
-                <i class="bi bi-cloud-arrow-down me-1"></i>Vault
+                <AppIcon name="vault" class="me-1" />Vault
                 <span v-if="vaultCount > 0" class="badge rounded-pill text-bg-warning text-dark ms-1">
                   {{ vaultCount }}
                 </span>
               </router-link>
+            </li>
+            <li v-if="!isInstalledPwa" class="nav-item d-sm-none">
+              <button
+                type="button"
+                class="nav-link btn btn-link text-start w-100 px-3 border-0 bg-transparent"
+                @click="handleInstallApp(); closeMenu();"
+              >
+                <AppIcon name="download" class="me-1" style="color: var(--cc-accent)" />Install App (PWA)
+              </button>
             </li>
           </ul>
 
@@ -117,58 +150,27 @@ onUnmounted(() => {
             <!-- Ctrl+K Command Search Trigger -->
             <button
               type="button"
-              class="btn btn-sm btn-cc-outline rounded-pill d-none d-lg-inline-flex align-items-center gap-2 px-3"
+              class="btn btn-sm btn-cc-outline rounded-pill d-none d-lg-inline-flex align-items-center gap-2 px-3 text-nowrap"
               title="Quick Search (Ctrl+K)"
               @click="searchModalOpen = true"
             >
-              <i class="bi bi-search" style="color: var(--cc-accent)"></i>
+              <AppIcon name="search" style="color: var(--cc-accent)" />
               <span class="small">Search</span>
-              <kbd class="font-mono small bg-transparent border rounded px-1" style="font-size: 0.66rem">Ctrl K</kbd>
+              <kbd class="font-mono small bg-transparent border rounded px-1 d-none d-xl-inline" style="font-size: 0.66rem; color: var(--cc-text); border-color: var(--cc-border);">Ctrl K</kbd>
             </button>
 
-            <!-- Live Event Stream Pill -->
-            <div class="btn-group btn-group-sm d-none d-xl-inline-flex" role="group" aria-label="Live community stream controls">
-              <button
-                type="button"
-                class="btn btn-sm rounded-start-pill px-2"
-                :class="isLiveEnabled ? 'btn-cc-outline text-success' : 'btn-cc-outline text-secondary'"
-                :title="isLiveEnabled ? 'Live Real-Time Event Stream Active (Click to Pause)' : 'Live Stream Paused (Click to Resume)'"
-                @click="toggleLiveStream"
-              >
-                <i class="bi" :class="isLiveEnabled ? 'bi-broadcast-pin' : 'bi-pause-circle'"></i>
-                <span class="font-mono ms-1" style="font-size: 0.7rem">{{ isLiveEnabled ? 'LIVE' : 'PAUSED' }}</span>
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm btn-cc-outline rounded-end-pill px-2"
-                title="Simulate a new real-time meet or RSVP arriving right now"
-                @click="triggerPulseNow"
-              >
-                <i class="bi bi-lightning-charge-fill text-warning"></i>
-              </button>
-            </div>
-
-            <!-- PWA Install Button (when available) -->
+            <!-- PWA Install Button -->
             <button
-              v-if="canInstallPwa"
+              v-if="!isInstalledPwa"
               type="button"
-              class="btn btn-sm btn-cc-outline rounded-pill d-none d-xxl-inline-flex align-items-center gap-1"
-              title="Install Standalone PWA"
-              @click="promptPwaInstall"
+              class="btn btn-sm btn-cc-outline rounded-pill d-none d-sm-inline-flex align-items-center gap-1 text-nowrap"
+              title="Install Roast & Redline as an App"
+              :disabled="installing"
+              @click="handleInstallApp"
             >
-              <i class="bi bi-download text-warning"></i>
-              <span class="small">Install</span>
+              <AppIcon name="download" style="color: var(--cc-accent)" />
+              <span class="small d-none d-md-inline">{{ canInstallPwa ? 'Install' : 'App' }}</span>
             </button>
-
-            <!-- Connection status pill -->
-            <span
-              class="badge rounded-pill d-none d-xxl-inline-flex align-items-center gap-1 py-1 px-2"
-              :class="isOnline ? 'text-bg-success bg-opacity-25 text-success' : 'text-bg-warning text-dark'"
-              :title="isOnline ? 'Online — Connected' : 'Offline — Using LocalDB Cache'"
-            >
-              <i class="bi" :class="isOnline ? 'bi-wifi' : 'bi-wifi-off'"></i>
-              {{ isOnline ? 'Online' : 'Offline' }}
-            </span>
 
             <!-- Theme toggle button -->
             <button
@@ -177,7 +179,7 @@ onUnmounted(() => {
               :aria-label="themeStore.isDark ? 'Switch to light theme' : 'Switch to dark theme'"
               @click="themeStore.toggleTheme()"
             >
-              <i class="bi" :class="themeStore.isDark ? 'bi-sun-fill text-warning' : 'bi-moon-stars-fill'"></i>
+              <AppIcon :name="themeStore.isDark ? 'sun' : 'moon'" :class="themeStore.isDark ? 'text-warning' : ''" />
             </button>
 
             <template v-if="authStore.isAuthenticated">
@@ -186,7 +188,7 @@ onUnmounted(() => {
                 class="btn btn-sm btn-cc-primary rounded-pill px-3"
                 @click="closeMenu"
               >
-                <i class="bi bi-plus-lg me-1"></i>Host Meet
+                <AppIcon name="plus" class="me-1" />Host Meet
               </router-link>
 
               <router-link
@@ -194,7 +196,7 @@ onUnmounted(() => {
                 class="btn btn-sm btn-cc-outline rounded-pill d-flex align-items-center gap-1 px-3"
                 @click="closeMenu"
               >
-                <i class="bi bi-car-front-fill" style="color: var(--cc-accent)"></i>
+                <AppIcon name="garage" style="color: var(--cc-accent)" />
                 <span>{{ authStore.user?.name?.split(' ')[0] }}</span>
                 <span v-if="authStore.isAdmin" class="badge text-bg-danger ms-1">Admin</span>
               </router-link>
@@ -205,7 +207,7 @@ onUnmounted(() => {
                 aria-label="Sign out"
                 @click="handleLogout"
               >
-                <i class="bi bi-box-arrow-right"></i>
+                <AppIcon name="logout" />
               </button>
             </template>
 

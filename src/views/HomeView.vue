@@ -1,11 +1,10 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMeetStore } from '../stores/meetStore'
 import { useAuthStore } from '../stores/authStore'
 import { useToast } from '../composables/useToast'
-import { useRealtimePulse } from '../composables/useRealtimePulse'
-import { loadDb } from '../services/localDb'
+import { api } from '../services/api'
 import MeetCard from '../components/MeetCard.vue'
 import { MEET_VIBES } from '../data/seedData'
 
@@ -13,7 +12,6 @@ const router = useRouter()
 const meetStore = useMeetStore()
 const authStore = useAuthStore()
 const { showToast } = useToast()
-const { isLiveEnabled, liveEventsLog, toggleLiveStream, triggerPulseNow } = useRealtimePulse()
 
 const heroSearch = ref('')
 const selectedRegion = ref('All')
@@ -21,8 +19,6 @@ const featuredMeets = ref([])
 const recentPosts = ref([])
 const totalMeetsCount = ref(108)
 const totalRsvpsCount = ref(280)
-
-const latestPulse = computed(() => liveEventsLog.value[0] || null)
 
 function handleHeroSearch() {
   router.push({
@@ -41,16 +37,14 @@ async function refreshHomeData() {
   const postsRes = await meetStore.fetchPosts({ limit: 3, sort: 'newest' })
   recentPosts.value = postsRes.data || []
   try {
-    const db = loadDb()
-    totalRsvpsCount.value = db.meet_rsvps?.length || 280
+    const insights = await api.get('insights')
+    if (insights && insights.kpis) {
+      if (insights.kpis.total_rsvps) totalRsvpsCount.value = insights.kpis.total_rsvps
+      if (insights.kpis.total_meets) totalMeetsCount.value = insights.kpis.total_meets
+    }
   } catch {
-    // ignore
+    // fallback to meet store total
   }
-}
-
-async function handleSimulateBurst() {
-  await triggerPulseNow()
-  await refreshHomeData()
 }
 
 async function handleToggleLike(meet) {
@@ -85,55 +79,8 @@ onMounted(async () => {
 
 <template>
   <div class="container">
-    <!-- Live Community Pulse Ticker Strip -->
-    <div
-      class="cc-tile py-2 px-3 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2"
-      role="region"
-      aria-label="Real-time community activity ticker"
-    >
-      <div class="d-flex align-items-center gap-2 overflow-hidden">
-        <span
-          class="badge rounded-pill font-mono d-inline-flex align-items-center gap-1"
-          :class="isLiveEnabled ? 'text-bg-success' : 'text-bg-secondary'"
-        >
-          <i class="bi" :class="isLiveEnabled ? 'bi-broadcast-pin' : 'bi-pause-fill'"></i>
-          {{ isLiveEnabled ? 'LIVE PULSE' : 'PAUSED' }}
-        </span>
-
-        <template v-if="latestPulse">
-          <span class="badge cc-badge-accent font-mono">{{ latestPulse.badge }}</span>
-          <router-link
-            :to="latestPulse.targetRoute"
-            class="small fw-semibold text-reset text-decoration-none text-truncate"
-          >
-            {{ latestPulse.text }}
-          </router-link>
-          <span class="small text-secondary font-mono d-none d-md-inline">({{ latestPulse.time }})</span>
-        </template>
-      </div>
-
-      <div class="d-flex align-items-center gap-2 ms-auto">
-        <button
-          type="button"
-          class="btn btn-sm btn-cc-outline rounded-pill py-0 px-2 font-mono"
-          style="font-size: 0.72rem"
-          @click="handleSimulateBurst"
-        >
-          <i class="bi bi-lightning-charge-fill text-warning me-1"></i>+1 Live Event
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm btn-cc-outline rounded-pill py-0 px-2 font-mono"
-          style="font-size: 0.72rem"
-          @click="toggleLiveStream"
-        >
-          {{ isLiveEnabled ? 'Pause' : 'Resume' }}
-        </button>
-      </div>
-    </div>
-
     <!-- Hero -->
-    <section class="cc-hero2 mb-3 cc-rise" aria-labelledby="home-title">
+    <section class="cc-hero2 mb-4 cc-rise" aria-labelledby="home-title">
       <div class="cc-hero2-wordmark" aria-hidden="true">ROAST &amp; REDLINE</div>
       <div class="cc-hero2-body">
         <div class="row g-4 align-items-end">
@@ -151,7 +98,7 @@ onMounted(async () => {
                 type="search"
                 class="form-control flex-grow-1 w-auto"
                 style="min-width: 160px"
-                placeholder="Search 108+ meets, cafes, JDM, Euro, Kuching..."
+                placeholder="Search meets, cafes, JDM, Euro, Kuching..."
               />
               <label for="hero-region" class="visually-hidden">Region</label>
               <select id="hero-region" v-model="selectedRegion" class="form-select w-auto">
@@ -175,16 +122,15 @@ onMounted(async () => {
           <div class="col-lg-5">
             <div class="cc-glass p-4">
               <p class="small mb-3" style="color: rgba(245, 239, 232, 0.88)">
-                Browse <strong>{{ totalMeetsCount }}+</strong> verified weekend coffee runs across
-                Victoria, Klang Valley, Penang, and Sarawak—or host your own meet with 1-click Smart
-                Link Import.
+                Browse <strong>{{ totalMeetsCount }}+</strong> weekend coffee runs across
+                Victoria, Klang Valley, Penang, and Sarawak—or host your own meet with venue search and low-car ramp instructions.
               </p>
               <div class="d-flex flex-wrap gap-2">
                 <router-link to="/meets/new" class="btn btn-cc-primary rounded-pill">
                   <i class="bi bi-plus-lg me-1"></i>Host a meet
                 </router-link>
                 <router-link to="/map" class="btn btn-outline-light rounded-pill">
-                  <i class="bi bi-map me-1"></i>Split Radar Map
+                  <i class="bi bi-map me-1"></i>Interactive Map
                 </router-link>
               </div>
             </div>
@@ -193,20 +139,26 @@ onMounted(async () => {
       </div>
     </section>
 
-    <!-- Bento: pulse + upcoming -->
+    <!-- Bento: community stats + upcoming -->
     <section class="cc-bento mb-4" aria-labelledby="upcoming-meets-heading">
       <div class="cc-tile cc-tile-accent cc-span-3 d-flex flex-column justify-content-between">
-        <span class="cc-bracket-label text-white">[ LIVE ROSTER ]</span>
         <div>
-          <div class="cc-stat">{{ totalMeetsCount }}+</div>
-          <div class="small text-secondary">Active coffee runs &amp; meets</div>
+          <span class="cc-bracket-label text-white">[ COMMUNITY ROSTER ]</span>
+          <div class="cc-stat mt-2">{{ totalMeetsCount }}+</div>
+          <div class="small text-white text-opacity-75">Active coffee runs &amp; meets</div>
+        </div>
+        <div class="pt-2 border-top border-white border-opacity-25 small text-white text-opacity-75">
+          <i class="bi bi-geo-alt me-1"></i>Melbourne, KL &amp; Kuching
         </div>
       </div>
       <div class="cc-tile cc-span-3 d-flex flex-column justify-content-between">
-        <span class="cc-bracket-label">[ ROLL-CALL ]</span>
         <div>
-          <div class="cc-stat">{{ totalRsvpsCount }}<span class="text-warning">+</span></div>
-          <div class="small text-secondary">Confirmed paddock RSVPs (AU &amp; MY)</div>
+          <span class="cc-bracket-label">[ CAR ROLL-CALL ]</span>
+          <div class="cc-stat mt-2" style="color: var(--cc-accent)">{{ totalRsvpsCount }}+</div>
+          <div class="small text-secondary">Confirmed enthusiast vehicles</div>
+        </div>
+        <div class="pt-2 border-top small text-secondary">
+          <i class="bi bi-car-front me-1" style="color: var(--cc-accent)"></i>JDM, Euro, Classics &amp; Cruisers
         </div>
       </div>
       <div class="cc-tile cc-span-6">
@@ -221,9 +173,9 @@ onMounted(async () => {
         </div>
         <ul class="list-unstyled mb-0">
           <li v-for="m in featuredMeets.slice(0, 4)" :key="m.id" class="py-2 border-top">
-            <router-link :to="`/meets/${m.id}`" class="d-flex justify-content-between text-reset text-decoration-none">
-              <span class="fw-semibold">{{ m.title }}</span>
-              <span class="small text-secondary">{{ m.cafe_name }}</span>
+            <router-link :to="`/meets/${m.id}`" class="d-flex justify-content-between align-items-center gap-3 text-reset text-decoration-none">
+              <span class="fw-semibold text-truncate">{{ m.title }}</span>
+              <span class="small text-secondary text-nowrap flex-shrink-0">{{ m.cafe_name }}</span>
             </router-link>
           </li>
         </ul>

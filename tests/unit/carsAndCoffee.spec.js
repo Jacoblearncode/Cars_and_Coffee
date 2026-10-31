@@ -189,4 +189,23 @@ describe('Cars & Coffee — Core Architecture, APIs & Stores Suite', () => {
     await buttons[2].trigger('click')
     expect(wrapper.emitted('change')).toBeTruthy()
   })
+
+  it('protects member privacy: hides user emails in insights for guests, reveals only to admin', async () => {
+    // 1. Unauthenticated guest request
+    const guestRes = await api.get('insights')
+    expect(guestRes.kpis).toBeTruthy()
+    expect(guestRes.users).toEqual([])
+
+    // 2. Authenticated regular member
+    const authStore = useAuthStore()
+    await authStore.login('member@carsandcoffee.com', 'Password123!')
+    const memberRes = await api.get('insights')
+    expect(memberRes.users).toEqual([])
+
+    // 3. Authenticated admin user
+    await authStore.login('admin@carsandcoffee.com', 'Password123!')
+    const adminRes = await api.get('insights')
+    expect(adminRes.users.length).toBeGreaterThan(0)
+    expect(adminRes.users.some((u) => u.email === 'member@carsandcoffee.com')).toBe(true)
+  })
 })

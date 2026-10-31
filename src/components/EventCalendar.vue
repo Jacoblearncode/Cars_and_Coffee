@@ -18,12 +18,25 @@ const props = defineProps({
 
 const router = useRouter()
 
+const initialDate = computed(() => {
+  if (props.meets && props.meets.length > 0) {
+    const sorted = [...props.meets].sort((a, b) =>
+      String(a.meet_datetime || '').localeCompare(String(b.meet_datetime || ''))
+    )
+    if (sorted[0]?.meet_datetime) {
+      return String(sorted[0].meet_datetime).slice(0, 10)
+    }
+  }
+  return undefined
+})
+
 const calendarEvents = computed(() =>
   props.meets.map((m) => ({
     id: String(m.id),
-    title: `[${m.region === 'Malaysia' ? 'MY' : 'AU'}] ☕ ${m.title}`,
+    title: m.title,
     start: String(m.meet_datetime || '').replace(' ', 'T'),
     end: String(m.end_datetime || '').replace(' ', 'T'),
+    textColor: '#ffffff',
     backgroundColor:
       m.vibe === 'JDM & Brews'
         ? '#e5534b'
@@ -31,11 +44,14 @@ const calendarEvents = computed(() =>
           ? '#0ea5e9'
           : m.vibe === 'Night Meet'
             ? '#8b5cf6'
-            : '#ff5500',
+            : m.vibe === 'Sunset Chill'
+              ? '#f59e0b'
+              : '#d97736',
     borderColor: 'transparent',
     extendedProps: {
       cafe: m.cafe_name,
-      region: m.region
+      region: m.region,
+      vibe: m.vibe
     }
   }))
 )
@@ -43,14 +59,14 @@ const calendarEvents = computed(() =>
 const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, listPlugin, interactionPlugin],
   initialView: 'dayGridMonth',
-  initialDate: '2026-11-01',
+  initialDate: initialDate.value,
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',
     right: 'dayGridMonth,listMonth'
   },
   buttonText: {
-    today: 'Nov 2026',
+    today: 'Today',
     dayGridMonth: 'Month Grid',
     listMonth: 'Schedule List'
   },

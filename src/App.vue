@@ -6,12 +6,10 @@ import ToastContainer from './components/ToastContainer.vue'
 import { useThemeStore } from './stores/themeStore'
 import { useOfflineSync } from './composables/useOfflineSync'
 import { useSyncStore } from './stores/syncStore'
-import { useRealtimePulse } from './composables/useRealtimePulse'
 
 const themeStore = useThemeStore()
 const { isOnline } = useOfflineSync()
 const syncStore = useSyncStore()
-const { init: initRealtimePulse } = useRealtimePulse()
 
 const outboxCount = computed(() => syncStore.pendingCount)
 const conflictCount = computed(() => syncStore.conflictCount)
@@ -20,7 +18,6 @@ const syncPendingOutbox = () => syncStore.flush()
 onMounted(() => {
   themeStore.initThemeListeners()
   syncStore.init()
-  initRealtimePulse()
 })
 </script>
 

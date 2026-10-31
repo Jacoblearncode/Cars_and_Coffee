@@ -784,6 +784,8 @@ export async function handleLocalRequest(method, rawEndpoint, params = {}, body 
       }
     })
 
+    const isAdmin = Boolean(currentUser && currentUser.role === 'admin')
+
     return {
       kpis: {
         total_meets: db.meets.length,
@@ -793,7 +795,7 @@ export async function handleLocalRequest(method, rawEndpoint, params = {}, body 
       },
       vibe_distribution: vibeCounts,
       make_distribution: makeCounts,
-      users: db.users.map(sanitizeUser)
+      users: isAdmin ? db.users.map(sanitizeUser) : []
     }
   }
 

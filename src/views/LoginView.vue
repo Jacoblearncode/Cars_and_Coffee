@@ -44,7 +44,7 @@ async function handleQuickDemo(demoEmail) {
         <div class="d-flex justify-content-center mb-3">
           <BrandLogo :size="48" :show-text="false" />
         </div>
-        <div class="cc-bracket-label">[ MEMBER ACCESS // JWT + MYSQL READY ]</div>
+        <div class="cc-bracket-label">[ MEMBER ACCESS ]</div>
         <h1 class="h3 fw-bold mb-1">Sign In to Roast &amp; Redline</h1>
         <p class="small text-secondary mb-0">
           Unlock member parking bay notes, RSVP to the Car Roll-Call, and host weekend coffee runs.
@@ -139,7 +139,7 @@ async function handleQuickDemo(demoEmail) {
 
       <p class="text-center small text-secondary mt-4 mb-0">
         New to the community?
-        <router-link to="/register" class="text-warning fw-bold text-decoration-none">
+        <router-link to="/register" class="fw-bold text-decoration-none" style="color: var(--cc-accent)">
           Create an Account
         </router-link>
       </p>

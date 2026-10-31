@@ -75,9 +75,16 @@ function handleToggleOffline(meet) {
 }
 
 async function handleInstallApp() {
-  const installed = await promptPwaInstall()
-  if (installed) {
-    showToast('Roast & Redline PWA installed to your home screen!', 'success')
+  if (canInstallPwa.value) {
+    const installed = await promptPwaInstall()
+    if (installed) {
+      showToast('Roast & Redline PWA installed to your home screen!', 'success')
+    }
+  } else {
+    showToast(
+      'To install Roast & Redline: click the Install icon in your browser address bar (top right) or browser menu (⋮) > "Install Roast & Redline".',
+      'info'
+    )
   }
 }
 
@@ -90,25 +97,25 @@ onMounted(async () => {
   <div class="container">
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
       <div>
-        <div class="cc-bracket-label">[ 05 // ZERO-SIGNAL PWA VAULT &amp; SYNC QUEUE ]</div>
-        <h1 class="h2 fw-bold mb-1">My Meets &amp; Offline Sync Center</h1>
+        <div class="cc-bracket-label">[ 05 // SAVED MEETS &amp; OFFLINE ACCESS ]</div>
+        <h1 class="h2 fw-bold mb-1">My Saved Meets &amp; Offline Sync</h1>
         <p class="text-secondary small mb-0">
-          Access your pinned meets, cafe parking bay instructions, and queued offline mutations even
+          Access your pinned meets, cafe parking bay instructions, and saved offline changes even
           in underground carparks or mountain touge runs with zero reception.
         </p>
       </div>
 
       <div class="d-flex flex-wrap align-items-center gap-2">
         <button
-          v-if="canInstallPwa"
+          v-if="!isInstalledPwa"
           type="button"
           class="btn btn-sm btn-cc-primary cc-pill-btn"
           @click="handleInstallApp"
         >
           <i class="bi bi-download me-1"></i>Install PWA App
         </button>
-        <span v-else-if="isInstalledPwa" class="badge text-bg-success rounded-pill px-3 py-2">
-          <i class="bi bi-phone-fill me-1"></i>Standalone PWA Active
+        <span v-else class="badge text-bg-success rounded-pill px-3 py-2">
+          <i class="bi bi-phone-fill me-1"></i>Installed App
         </span>
 
         <div class="cc-tile py-2 px-3 d-flex align-items-center gap-3 small">
@@ -127,7 +134,7 @@ onMounted(async () => {
             :disabled="syncStore.syncing"
             @click="handleManualSync"
           >
-            {{ syncStore.syncing ? 'Syncing…' : `Flush Outbox (${outboxQueue.length})` }}
+            {{ syncStore.syncing ? 'Syncing…' : `Sync Changes (${outboxQueue.length})` }}
           </button>
         </div>
       </div>
@@ -138,9 +145,9 @@ onMounted(async () => {
       <div v-if="outboxQueue.length > 0" class="col-lg-6">
         <div class="cc-tile h-100">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="cc-bracket-label mb-0">[ PENDING OUTBOX QUEUE ({{ outboxQueue.length }}) ]</span>
+            <span class="cc-bracket-label mb-0">[ PENDING CHANGES TO SYNC ({{ outboxQueue.length }}) ]</span>
             <button type="button" class="btn btn-sm btn-cc-primary rounded-pill" @click="handleManualSync">
-              Replay Queue Now
+              Sync Now
             </button>
           </div>
           <ul class="list-unstyled small mb-0 d-flex flex-column gap-2">
@@ -164,7 +171,7 @@ onMounted(async () => {
         <div class="cc-tile h-100 border-warning">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <span class="cc-bracket-label text-warning mb-0">
-              [ 3-WAY MERGE CONFLICT LOG ({{ syncStore.conflicts.length }}) ]
+              [ SYNC CONFLICT NOTICES ({{ syncStore.conflicts.length }}) ]
             </span>
             <button type="button" class="btn btn-sm btn-outline-warning rounded-pill" @click="syncStore.clearConflicts()">
               Clear All
@@ -231,8 +238,8 @@ onMounted(async () => {
     <div v-if="activeTab === 'vault'">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <span class="small text-secondary">
-          Pinned meets are persisted in your browser's Offline Vault (`localStorage` + Workbox PWA
-          cache) so full meet pages, parking notes, and GPS coordinates open even when offline.
+          Pinned meets are saved to your device for offline access so full meet details,
+          parking ramp notes, and GPS coordinates remain accessible even without mobile reception.
           <template v-if="lastSyncedAt"> Last synced at {{ lastSyncedAt }}.</template>
         </span>
         <button

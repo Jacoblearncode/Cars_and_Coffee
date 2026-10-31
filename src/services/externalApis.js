@@ -67,13 +67,13 @@ export function decodeCruisingWeather(code, rainProb = 0) {
   }
   if ([1, 2, 3].includes(num)) {
     return {
-      condition: rainProb >= 40 ? 'Cloudy · Passing Shower Risk' : 'Partly Cloudy · Dry Roads',
+      condition: rainProb >= 45 ? 'Cloudy · Passing Shower Risk' : 'Partly Cloudy · Dry Roads',
       cruisingAdvice:
-        rainProb >= 40
+        rainProb >= 45
           ? 'Bring an umbrella for outdoor coffee seating'
           : 'Great lighting for morning car photography',
       icon: 'bi-cloud-sun-fill',
-      badgeClass: rainProb >= 40 ? 'weather-pill-cloudy' : 'weather-pill-sunny'
+      badgeClass: rainProb >= 45 ? 'weather-pill-cloudy' : 'weather-pill-sunny'
     }
   }
   if ([45, 48].includes(num)) {
@@ -84,12 +84,20 @@ export function decodeCruisingWeather(code, rainProb = 0) {
       badgeClass: 'weather-pill-cloudy'
     }
   }
-  if ([51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(num)) {
+  if ([61, 63, 65, 80, 81, 82, 95, 96, 99].includes(num) || (rainProb >= 50 && [51, 53, 55].includes(num))) {
     return {
       condition: 'Wet Meet Warning',
       cruisingAdvice: 'Rain expected — undercover cafe seating & wiper check',
       icon: 'bi-cloud-rain-heavy-fill',
       badgeClass: 'weather-pill-rain'
+    }
+  }
+  if ([51, 53, 55].includes(num) || rainProb >= 40) {
+    return {
+      condition: 'Passing Showers Likely',
+      cruisingAdvice: 'Keep an eye on radar — outdoor seating may be damp',
+      icon: 'bi-cloud-drizzle-fill',
+      badgeClass: 'weather-pill-cloudy'
     }
   }
   return {
@@ -103,12 +111,25 @@ export function decodeCruisingWeather(code, rainProb = 0) {
 /**
  * 1. Open-Meteo Live Meet-Day Weather API
  */
-export async function fetchMeetWeather(latitude, longitude, region = 'Australia') {
+export async function fetchMeetWeather(latitude, longitude, region = 'Australia', meetDatetime = null) {
   const lat = Number(latitude)
   const lng = Number(longitude)
   const isTropical = region === 'Malaysia' || lat > -10
   const fallbackTemp = isTropical ? 28.5 : 19.2
   const fallbackRain = isTropical ? 25 : 10
+
+  let targetDateStr = null
+  let isWithinForecastRange = false
+  if (meetDatetime) {
+    const dt = new Date(String(meetDatetime).replace(' ', 'T'))
+    if (!Number.isNaN(dt.getTime())) {
+      const diffDays = Math.ceil((dt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      if (diffDays >= 0 && diffDays <= 14) {
+        isWithinForecastRange = true
+        targetDateStr = dt.toISOString().slice(0, 10)
+      }
+    }
+  }
 
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     const decoded = decodeCruisingWeather(1, fallbackRain)
@@ -117,7 +138,7 @@ export async function fetchMeetWeather(latitude, longitude, region = 'Australia'
       rainProbPercent: fallbackRain,
       windSpeedKmh: 11.5,
       ...decoded,
-      source: 'Offline Weather Snapshot',
+      source: 'Regional Typical Weather (Estimate)',
       live: false
     }
   }
@@ -127,8 +148,8 @@ export async function fetchMeetWeather(latitude, longitude, region = 'Australia'
     url.searchParams.set('latitude', lat.toFixed(4))
     url.searchParams.set('longitude', lng.toFixed(4))
     url.searchParams.set('current', 'temperature_2m,precipitation,weather_code,wind_speed_10m')
-    url.searchParams.set('hourly', 'precipitation_probability')
-    url.searchParams.set('forecast_days', '1')
+    url.searchParams.set('hourly', 'temperature_2m,precipitation_probability,weather_code,wind_speed_10m')
+    url.searchParams.set('forecast_days', isWithinForecastRange ? '16' : '1')
     url.searchParams.set('timezone', 'auto')
 
     const controller = new AbortController()
@@ -138,15 +159,48 @@ export async function fetchMeetWeather(latitude, longitude, region = 'Australia'
 
     if (!res.ok) throw new Error(`Open-Meteo HTTP ${res.status}`)
     const data = await res.json()
-    const current = data.current || {}
-    const tempC = Math.round(Number(current.temperature_2m ?? fallbackTemp) * 10) / 10
-    const windSpeedKmh = Math.round(Number(current.wind_speed_10m ?? 10) * 10) / 10
-    const weatherCode = current.weather_code ?? 1
-    const hourlyProbs = data.hourly?.precipitation_probability || []
-    const rainProbPercent =
-      hourlyProbs.length > 0
-        ? Math.max(...hourlyProbs.slice(0, 6).map((n) => Number(n) || 0))
-        : fallbackRain
+
+    let tempC = fallbackTemp
+    let windSpeedKmh = 10
+    let weatherCode = 1
+    let rainProbPercent = fallbackRain
+    let sourceLabel = 'Current Venue Weather'
+
+    if (isWithinForecastRange && targetDateStr && Array.isArray(data.hourly?.time)) {
+      const times = data.hourly.time
+      const targetIndices = []
+      for (let i = 0; i < times.length; i += 1) {
+        if (times[i].startsWith(targetDateStr)) {
+          targetIndices.push(i)
+        }
+      }
+      if (targetIndices.length > 0) {
+        // Morning meetup window (approx 7am to 11am)
+        const morningIndices = targetIndices.slice(7, 12)
+        const activeIndices = morningIndices.length > 0 ? morningIndices : targetIndices
+        const temps = activeIndices.map((i) => Number(data.hourly.temperature_2m?.[i])).filter((n) => !Number.isNaN(n))
+        const rainProbs = activeIndices.map((i) => Number(data.hourly.precipitation_probability?.[i])).filter((n) => !Number.isNaN(n))
+        const winds = activeIndices.map((i) => Number(data.hourly.wind_speed_10m?.[i])).filter((n) => !Number.isNaN(n))
+        const codes = activeIndices.map((i) => Number(data.hourly.weather_code?.[i])).filter((n) => !Number.isNaN(n))
+
+        if (temps.length) tempC = Math.round((temps.reduce((a, b) => a + b, 0) / temps.length) * 10) / 10
+        if (rainProbs.length) rainProbPercent = Math.max(...rainProbs)
+        if (winds.length) windSpeedKmh = Math.round((winds.reduce((a, b) => a + b, 0) / winds.length) * 10) / 10
+        if (codes.length) weatherCode = codes[Math.floor(codes.length / 2)]
+        sourceLabel = 'Meet-Day Forecast'
+      }
+    } else {
+      const current = data.current || {}
+      tempC = Math.round(Number(current.temperature_2m ?? fallbackTemp) * 10) / 10
+      windSpeedKmh = Math.round(Number(current.wind_speed_10m ?? 10) * 10) / 10
+      weatherCode = current.weather_code ?? 1
+      const hourlyProbs = data.hourly?.precipitation_probability || []
+      rainProbPercent =
+        hourlyProbs.length > 0
+          ? Math.max(...hourlyProbs.slice(0, 6).map((n) => Number(n) || 0))
+          : fallbackRain
+      sourceLabel = 'Current Venue Weather'
+    }
 
     const decoded = decodeCruisingWeather(weatherCode, rainProbPercent)
     return {
@@ -154,7 +208,7 @@ export async function fetchMeetWeather(latitude, longitude, region = 'Australia'
       rainProbPercent,
       windSpeedKmh,
       ...decoded,
-      source: 'Open-Meteo Live Weather API',
+      source: sourceLabel,
       live: true
     }
   } catch {
@@ -164,7 +218,7 @@ export async function fetchMeetWeather(latitude, longitude, region = 'Australia'
       rainProbPercent: fallbackRain,
       windSpeedKmh: 12.0,
       ...decoded,
-      source: 'Cached Regional Weather Forecast',
+      source: 'Regional Typical Weather (Estimate)',
       live: false
     }
   }

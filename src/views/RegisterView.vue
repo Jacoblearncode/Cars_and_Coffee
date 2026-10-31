@@ -232,7 +232,7 @@ onMounted(() => {
 
       <p class="text-center small text-secondary mt-4 mb-0">
         Already have an account?
-        <router-link to="/login" class="text-warning fw-bold text-decoration-none">
+        <router-link to="/login" class="fw-bold text-decoration-none" style="color: var(--cc-accent)">
           Sign In
         </router-link>
       </p>

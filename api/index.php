@@ -793,6 +793,17 @@ if ($endpoint === 'insights' && $method === 'GET') {
             $makeCounts[$mk] = isset($makeCounts[$mk]) ? $makeCounts[$mk] + 1 : 1;
         }
     }
+    foreach ($rsvps as $r) {
+        if ($r['attend_type'] === 'bringing_car' && !empty($r['car_brought'])) {
+            $parts = preg_split('/\s+/', trim($r['car_brought']));
+            $mk = (count($parts) > 1 && preg_match('/^\d{4}$/', $parts[0])) ? $parts[1] : $parts[0];
+            if ($mk) {
+                $makeCounts[$mk] = isset($makeCounts[$mk]) ? $makeCounts[$mk] + 1 : 1;
+            }
+        }
+    }
+
+    $isAdmin = ($currentUser && isset($currentUser['role']) && $currentUser['role'] === 'admin');
 
     send_json(array(
         'kpis' => array(
@@ -803,7 +814,7 @@ if ($endpoint === 'insights' && $method === 'GET') {
         ),
         'vibe_distribution' => $vibeCounts,
         'make_distribution' => $makeCounts,
-        'users'             => $users
+        'users'             => $isAdmin ? $users : array()
     ));
 }
 

@@ -49,6 +49,20 @@ const isLiked = computed(() => {
 
 const isPinnedOffline = computed(() => (meet.value ? isMeetSavedOffline(meet.value.id) : false))
 
+function formatDateTime(raw) {
+  if (!raw) return ''
+  const dt = new Date(String(raw).replace(' ', 'T'))
+  if (Number.isNaN(dt.getTime())) return raw
+  return dt.toLocaleDateString('en-AU', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 async function loadMeetData() {
   const id = route.params.id
   if (!id) return
@@ -56,7 +70,7 @@ async function loadMeetData() {
   try {
     const m = await meetStore.fetchMeetById(id)
     if (m && m.latitude && m.longitude) {
-      weather.value = await fetchMeetWeather(m.latitude, m.longitude, m.region)
+      weather.value = await fetchMeetWeather(m.latitude, m.longitude, m.region, m.meet_datetime)
     }
     if (authStore.user && authStore.user.car_make) {
       selectedMake.value = authStore.user.car_make
@@ -268,7 +282,7 @@ onMounted(() => {
                   <div class="col-md-6">
                     <div class="small text-secondary">Date &amp; Time</div>
                     <div class="fw-bold font-mono">
-                      <i class="bi bi-clock me-1" style="color: var(--cc-accent)"></i>{{ meet.meet_datetime }}
+                      <i class="bi bi-clock me-1" style="color: var(--cc-accent)"></i>{{ formatDateTime(meet.meet_datetime) }}
                     </div>
                     <div class="small text-secondary">Hosted by {{ meet.host_name }} ({{ meet.host_car }})</div>
                   </div>
@@ -292,12 +306,13 @@ onMounted(() => {
 
                 <div
                   v-else
-                  class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-2 px-3 rounded-3 bg-dark bg-opacity-50 border border-warning border-opacity-50"
+                  class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 rounded-3 border"
+                  style="background-color: var(--cc-surface); border-color: rgba(217, 119, 54, 0.4) !important;"
                 >
                   <div class="small">
-                    <i class="bi bi-lock-fill text-warning me-1"></i>
+                    <i class="bi bi-shield-lock-fill me-1" style="color: var(--cc-accent)"></i>
                     <strong>Member Privacy Shield:</strong> Exact parking bay entry notes, low-car
-                    ramp guidance, and host contact are hidden for guests.
+                    ramp guidance, and host contact are reserved for signed-in members.
                   </div>
                   <router-link to="/login" class="btn btn-sm btn-cc-primary cc-pill-btn">
                     Sign In to Unlock
@@ -403,7 +418,7 @@ onMounted(() => {
                     <span v-if="c.rating" class="badge text-bg-warning text-dark ms-2">
                       ★ {{ c.rating }}/5
                     </span>
-                    <span class="text-secondary small ms-2 font-mono">{{ c.created_at }}</span>
+                    <span class="text-secondary small ms-2 font-mono">{{ formatDateTime(c.created_at) }}</span>
                   </div>
                   <button
                     v-if="
@@ -521,8 +536,8 @@ onMounted(() => {
           <!-- Live Open-Meteo Cruising Weather Card -->
           <div v-if="weather" class="cc-tile mb-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="cc-bracket-label mb-0">[ TELEMETRY // OPEN-METEO ]</span>
-              <span class="badge cc-badge-accent font-mono">Live Forecast</span>
+              <span class="cc-bracket-label mb-0">[ CRUISING WEATHER ]</span>
+              <span class="badge cc-badge-accent font-mono">{{ weather.source || 'Weather Telemetry' }}</span>
             </div>
 
             <div class="d-flex align-items-center gap-3 my-3">

@@ -45,12 +45,21 @@ const makeChartData = computed(() => {
   const labels = Object.keys(dist)
   const values = Object.values(dist)
   return {
-    labels: labels.length ? labels : ['Toyota', 'Honda', 'Porsche', 'Nissan', 'Proton'],
+    labels: labels.length ? labels : ['Toyota', 'Honda', 'Porsche', 'Nissan', 'Proton', 'BMW', 'Mazda'],
     datasets: [
       {
         label: 'Cars in Community Roll-Calls',
-        data: values.length ? values : [3, 2, 2, 2, 2],
-        backgroundColor: ['#ff5500', '#e5534b', '#0ea5e9', '#2ea043', '#a855f7', '#eab308', '#14b8a6']
+        data: values.length ? values : [8, 6, 5, 4, 3, 3, 2],
+        backgroundColor: [
+          '#d97736',
+          '#0284c7',
+          '#16a34a',
+          '#7c3aed',
+          '#f59e0b',
+          '#be123c',
+          '#0d9488',
+          '#64748b'
+        ]
       }
     ]
   }
@@ -59,16 +68,16 @@ const makeChartData = computed(() => {
 const meetTurnoutChartData = computed(() => {
   const topMeets = allMeets.value.slice(0, 6)
   return {
-    labels: topMeets.map((m) => m.title.slice(0, 20) + '…'),
+    labels: topMeets.map((m) => (m.title.length > 22 ? m.title.slice(0, 22) + '…' : m.title)),
     datasets: [
       {
         label: 'Roll-Call RSVPs',
-        backgroundColor: '#ff5500',
+        backgroundColor: '#d97736',
         data: topMeets.map((m) => m.rsvp_count || 0)
       },
       {
         label: 'Likes',
-        backgroundColor: '#e5534b',
+        backgroundColor: '#0284c7',
         data: topMeets.map((m) => m.likes_count || 0)
       }
     ]
@@ -82,7 +91,7 @@ const vibeChartData = computed(() => {
     datasets: [
       {
         label: 'Meets by Vibe',
-        backgroundColor: ['#ff5500', '#e5534b', '#0ea5e9', '#2ea043', '#a855f7'],
+        backgroundColor: ['#d97736', '#0284c7', '#16a34a', '#7c3aed', '#f59e0b', '#0d9488'],
         data: Object.values(dist)
       }
     ]
@@ -92,6 +101,17 @@ const vibeChartData = computed(() => {
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom'
+    }
+  }
+}
+
+const barChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  indexAxis: 'y',
   plugins: {
     legend: {
       position: 'bottom'
@@ -124,7 +144,7 @@ onMounted(() => {
 <template>
   <div class="container">
     <div class="mb-4">
-      <div class="cc-bracket-label">[ 04 // CHART.JS TELEMETRY &amp; PADDOCK ANALYTICS ]</div>
+      <div class="cc-bracket-label">[ 04 // COMMUNITY STATS &amp; INSIGHTS ]</div>
       <h1 class="h2 fw-bold mb-1">Community &amp; Car Roll-Call Insights</h1>
       <p class="text-secondary small mb-0">
         Live breakdown of popular car makes at meets, weekend turnout trends, and meet vibes across
@@ -185,7 +205,7 @@ onMounted(() => {
           <div class="cc-bracket-label">[ TURNOUT LEADERS ]</div>
           <h2 class="h6 fw-bold mb-3">Top Meet RSVPs vs. Likes</h2>
           <div style="height: 260px">
-            <Bar :data="meetTurnoutChartData" :options="chartOptions" />
+            <Bar :data="meetTurnoutChartData" :options="barChartOptions" />
           </div>
         </div>
       </div>

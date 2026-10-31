@@ -10,6 +10,12 @@ export default defineConfig(({ command }) => ({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'pwa-icon.svg'],
+      // Serve the manifest + service worker from the dev server too, so install/offline can be tried without a build
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        navigateFallback: 'index.html'
+      },
       manifest: {
         name: 'Roast & Redline — Cars & Coffee Community Platform',
         short_name: 'Roast & Redline',
@@ -21,14 +27,8 @@ export default defineConfig(({ command }) => ({
         start_url: './',
         icons: [
           {
-            src: 'favicon.svg',
-            sizes: '120x120',
-            type: 'image/svg+xml',
-            purpose: 'any'
-          },
-          {
             src: 'pwa-icon.svg',
-            sizes: '512x512',
+            sizes: '192x192 512x512',
             type: 'image/svg+xml',
             purpose: 'any maskable'
           }
@@ -84,6 +84,20 @@ export default defineConfig(({ command }) => ({
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 365
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'jsdelivr-cdn-cache',
               expiration: {
                 maxEntries: 30,
                 maxAgeSeconds: 60 * 60 * 24 * 365

@@ -1,4 +1,6 @@
 <script setup>
+import AppIcon from './AppIcon.vue'
+
 defineProps({
   page: { type: Number, required: true },
   totalPages: { type: Number, required: true },
@@ -34,7 +36,7 @@ function goTo(p, totalPages) {
           aria-label="Previous page"
           @click="goTo(page - 1, totalPages)"
         >
-          <i class="bi bi-chevron-left"></i> Prev
+          <AppIcon name="chevron-left" :size="13" class="me-1" />Prev
         </button>
       </li>
 
@@ -62,9 +64,36 @@ function goTo(p, totalPages) {
           aria-label="Next page"
           @click="goTo(page + 1, totalPages)"
         >
-          Next <i class="bi bi-chevron-right"></i>
+          Next<AppIcon name="chevron-right" :size="13" class="ms-1" />
         </button>
       </li>
     </ul>
   </nav>
 </template>
+
+<style scoped>
+.page-link {
+  background-color: var(--cc-surface);
+  color: var(--cc-text);
+  border-color: var(--cc-border);
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+.page-link:hover:not(:disabled) {
+  background-color: var(--cc-surface-hover, rgba(217, 119, 54, 0.1));
+  color: var(--cc-accent);
+  border-color: var(--cc-accent);
+}
+.page-item.active .page-link {
+  background-color: var(--cc-accent);
+  border-color: var(--cc-accent);
+  color: #ffffff;
+  font-weight: 700;
+}
+.page-item.disabled .page-link {
+  opacity: 0.45;
+  background-color: var(--cc-surface);
+  color: var(--cc-text);
+  border-color: var(--cc-border);
+}
+</style>

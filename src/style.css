@@ -145,36 +145,24 @@ h1, h2, h3, .font-display {
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
+  background: rgba(18, 16, 14, 0.82);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .weather-pill-sunny {
-  background: rgba(46, 160, 67, 0.16);
   color: #4ade80;
-  border: 1px solid rgba(46, 160, 67, 0.35);
-}
-
-[data-bs-theme="light"] .weather-pill-sunny {
-  color: #15803d;
+  border: 1px solid rgba(46, 160, 67, 0.45);
 }
 
 .weather-pill-cloudy {
-  background: rgba(217, 119, 54, 0.16);
   color: #fb923c;
-  border: 1px solid rgba(217, 119, 54, 0.35);
-}
-
-[data-bs-theme="light"] .weather-pill-cloudy {
-  color: #b45309;
+  border: 1px solid rgba(217, 119, 54, 0.45);
 }
 
 .weather-pill-rain {
-  background: rgba(229, 83, 75, 0.16);
   color: #f87171;
-  border: 1px solid rgba(229, 83, 75, 0.35);
-}
-
-[data-bs-theme="light"] .weather-pill-rain {
-  color: #b91c1c;
+  border: 1px solid rgba(229, 83, 75, 0.45);
 }
 
 /* Hero Banner */
@@ -293,8 +281,6 @@ textarea.user-valid-fallback {
   text-transform: uppercase;
   color: var(--cc-accent);
 }
-.cc-bracket-label::before { content: '[ '; opacity: 0.6; }
-.cc-bracket-label::after { content: ' ]'; opacity: 0.6; }
 
 /* Floating pill navigation */
 .cc-nav-wrap { position: sticky; top: 0.75rem; z-index: 1030; padding: 0 0.75rem; }
@@ -312,6 +298,7 @@ textarea.user-valid-fallback {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--cc-text-muted);
+  white-space: nowrap;
 }
 .cc-nav .nav-link:hover { color: var(--cc-text); }
 .cc-nav .nav-link.router-link-exact-active,
@@ -339,7 +326,7 @@ textarea.user-valid-fallback {
 }
 .cc-hero2-wordmark {
   position: absolute;
-  top: 1rem;
+  top: 1.5rem;
   left: 0;
   right: 0;
   text-align: center;
@@ -348,12 +335,13 @@ textarea.user-valid-fallback {
   font-size: clamp(3rem, 14vw, 11rem);
   line-height: 0.9;
   letter-spacing: -0.04em;
-  color: rgba(245, 239, 232, 0.9);
+  color: rgba(245, 239, 232, 0.18);
   mix-blend-mode: overlay;
   pointer-events: none;
   user-select: none;
+  z-index: 0;
 }
-.cc-hero2-body { position: relative; padding: clamp(1.25rem, 4vw, 3rem); }
+.cc-hero2-body { position: relative; z-index: 1; padding: clamp(1.25rem, 4vw, 3rem); }
 .cc-glass {
   background: rgba(24, 20, 17, 0.55);
   backdrop-filter: blur(12px);
@@ -374,6 +362,9 @@ textarea.user-valid-fallback {
   border: 0;
   color: #fff;
   box-shadow: none;
+}
+.cc-search-pill input::placeholder {
+  color: rgba(245, 239, 232, 0.75);
 }
 .cc-search-pill select option { color: #000; }
 

@@ -9,17 +9,10 @@ import App from './App.vue'
 import router from './router'
 import { vFocus } from './directives/focus'
 
-/**
- * In Vite development mode, unregister any previously installed production
- * Service Worker so stale cached bundles or map tiles never interfere with HMR.
+/*
+ * The PWA service worker is registered by vite-plugin-pwa (devOptions.enabled in vite.config.js),
+ * so install prompts and the offline vault work on the dev server as well as in production builds.
  */
-if (import.meta.env.DEV && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    for (const registration of registrations) {
-      registration.unregister()
-    }
-  })
-}
 
 /**
  * Post-interaction `:user-invalid` WeakMap Fallback & `aria-invalid` Synchronizer

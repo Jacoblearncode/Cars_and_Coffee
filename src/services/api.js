@@ -49,6 +49,21 @@ export function enqueueOfflineAction(method, endpoint, body = {}, meta = {}) {
   }
 }
 
+export function getCurrentUserId() {
+  const token = getStoredToken()
+  if (!token) return null
+  try {
+    const parts = token.split('.')
+    if (parts.length >= 2) {
+      const payload = JSON.parse(atob(parts[1]))
+      return payload && payload.id ? Number(payload.id) : null
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
 export function clearOfflineOutbox() {
   clearQueue()
 }
@@ -66,10 +81,10 @@ export function getApiEngineStatus() {
     mode: activeBackendEngine,
     label:
       activeBackendEngine === 'php-mysql'
-        ? 'PHP + MySQL (Live Server)'
+        ? 'Live Community Server'
         : !isOnline
-          ? 'LocalDB (Offline / Out-of-Signal Mode)'
-          : 'LocalDB Relational Fallback',
+          ? 'Offline Mode (Saved Locally)'
+          : 'Local Demo Storage',
     online: isOnline,
     outboxCount,
     totalApiRequests
@@ -195,6 +210,7 @@ async function request(method, endpoint, { params = {}, body = null } = {}) {
   const result = await handleLocalRequest(method, endpoint, params, body || {}, token)
   if (shouldQueue) {
     enqueueOfflineAction(method, endpoint, body || {}, {
+      user_id: getCurrentUserId(),
       label: meetLabelFor(endpoint, body),
       desired: result && typeof result.liked === 'boolean' ? result.liked : undefined,
       ...(snapshot || {})
@@ -222,7 +238,10 @@ export function flushOfflineOutbox() {
       return { synced: queue.length, remaining: 0, conflicts: [], stopped: null }
     }
 
-    const result = await replayQueue((method, endpoint, body) => phpFetch(method, endpoint, { body }))
+    const currentUserId = getCurrentUserId()
+    const result = await replayQueue((method, endpoint, body) => phpFetch(method, endpoint, { body }), {
+      userId: currentUserId
+    })
     if (result.synced > 0 || result.conflicts.length > 0) activeBackendEngine = 'php-mysql'
     // Refresh the LocalDB cache with whatever the server says is now true.
     result.serverState.forEach(({ data }) => {

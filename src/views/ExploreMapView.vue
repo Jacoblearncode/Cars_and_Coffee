@@ -122,19 +122,70 @@ onMounted(async () => {
       </span>
     </div>
 
-    <div class="row g-4">
+    <!-- Views Rendering -->
+    <div v-if="activeTab === 'split'" class="row g-4">
+      <div class="col-lg-6">
+        <EventMap
+          :meets="filteredMeets"
+          :initial-region="selectedRegion"
+          height="520px"
+          @select-meet="handleSelectMeet"
+          @region-change="handleRegionFromMap"
+        />
+      </div>
+      <div class="col-lg-6">
+        <EventCalendar :meets="filteredMeets" />
+      </div>
+
+      <!-- Spotlight Banner under Split View -->
+      <div v-if="selectedMeet" class="col-12">
+        <div class="cc-tile">
+          <div class="row g-3 align-items-center">
+            <div class="col-md-3">
+              <img
+                :src="selectedMeet.image"
+                :alt="selectedMeet.title"
+                class="w-100 rounded-3"
+                style="height: 140px; object-fit: cover"
+              />
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge cc-badge-accent font-mono">{{ selectedMeet.region }}</span>
+                <span class="badge text-bg-dark font-mono">{{ selectedMeet.vibe }}</span>
+              </div>
+              <h2 class="h5 fw-bold mb-1">{{ selectedMeet.title }}</h2>
+              <p class="small text-secondary mb-1">
+                <i class="bi bi-cup-hot-fill me-1" style="color: var(--cc-accent)"></i>{{ selectedMeet.cafe_name }} &mdash; {{ selectedMeet.address }}
+              </p>
+              <div class="small font-mono text-secondary">
+                <i class="bi bi-calendar-event me-1" style="color: var(--cc-accent)"></i>{{ selectedMeet.meet_datetime }} &middot;
+                🚗 {{ selectedMeet.rsvp_count || 0 }} / {{ selectedMeet.capacity || 60 }} in Roll-Call
+              </div>
+            </div>
+            <div class="col-md-3 text-md-end">
+              <router-link :to="`/meets/${selectedMeet.id}`" class="btn btn-cc-primary cc-pill-btn">
+                Inspect Meet <i class="bi bi-arrow-up-right ms-1"></i>
+              </router-link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="row g-4">
       <div :class="selectedMeet ? 'col-lg-8' : 'col-12'">
-        <div v-if="activeTab === 'map' || activeTab === 'split'" class="mb-4">
+        <div v-if="activeTab === 'map'">
           <EventMap
             :meets="filteredMeets"
             :initial-region="selectedRegion"
-            height="480px"
+            height="520px"
             @select-meet="handleSelectMeet"
             @region-change="handleRegionFromMap"
           />
         </div>
 
-        <div v-if="activeTab === 'calendar' || activeTab === 'split'">
+        <div v-if="activeTab === 'calendar'">
           <EventCalendar :meets="filteredMeets" />
         </div>
       </div>

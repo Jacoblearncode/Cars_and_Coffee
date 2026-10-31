@@ -114,6 +114,29 @@ describe('Offline sync queue — replay & conflict resolution', () => {
     expect(send).toHaveBeenCalledTimes(2)
     expect(res.synced).toBe(1)
   })
+
+  it('scopes queue replay to current user_id and leaves other users actions queued', async () => {
+    // User 10 enqueues an RSVP
+    enqueue('POST', 'meets/1/rsvp', { attend_type: 'spectator' }, { user_id: 10 })
+    // User 20 enqueues an RSVP
+    enqueue('POST', 'meets/2/rsvp', { attend_type: 'bringing_car' }, { user_id: 20 })
+
+    expect(readQueue()).toHaveLength(2)
+
+    const send = vi.fn().mockResolvedValue({ success: true })
+    // Replay only for User 10
+    const res = await replayQueue(send, { userId: 10 })
+
+    expect(res.synced).toBe(1)
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(send.mock.calls[0][1]).toBe('meets/1/rsvp')
+
+    // User 20's item remains in queue safely
+    const remaining = readQueue()
+    expect(remaining).toHaveLength(1)
+    expect(remaining[0].user_id).toBe(20)
+    expect(remaining[0].endpoint).toBe('meets/2/rsvp')
+  })
 })
 
 describe('Sync store', () => {

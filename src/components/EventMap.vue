@@ -45,16 +45,25 @@ function getTileUrl() {
 }
 
 const vibeColors = {
-  'Morning Coffee': '#ff5500',
+  'Morning Coffee': '#d97736',
   'JDM & Brews': '#e63946',
   'Euro & Classics': '#0ea5e9',
   'Sunset Chill': '#f59e0b',
   'Night Meet': '#8b5cf6'
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function createCoffeeMarkerIcon(meet) {
   const vibe = typeof meet === 'string' ? meet : meet?.vibe || 'Morning Coffee'
-  const color = vibeColors[vibe] || '#ff5500'
+  const color = vibeColors[vibe] || '#d97736'
   const iconClass =
     vibe === 'JDM & Brews'
       ? 'bi-lightning-charge-fill'
@@ -68,7 +77,7 @@ function createCoffeeMarkerIcon(meet) {
 
   return L.divIcon({
     className: 'cc-custom-div-icon',
-    html: `<div class="cc-map-pin" style="background:${color};border:2px solid #11100E;box-shadow:0 4px 12px rgba(0,0,0,0.45);"><i class="bi ${iconClass}"></i></div>`,
+    html: `<div class="cc-map-pin" style="background:${color};border:2px solid #11100E;box-shadow:0 2px 6px rgba(0,0,0,0.3);"><i class="bi ${iconClass}"></i></div>`,
     iconSize: [36, 36],
     iconAnchor: [18, 36],
     popupAnchor: [0, -34]
@@ -92,18 +101,27 @@ function renderMarkers() {
       title: m.title
     })
 
+    const titleEsc = escapeHtml(m.title)
+    const vibeEsc = escapeHtml(m.vibe || 'Cars & Coffee')
+    const regionEsc = escapeHtml(m.region || '')
+    const cafeEsc = escapeHtml(m.cafe_name || m.address || '')
+    const dateEsc = escapeHtml(String(m.meet_datetime || '').slice(0, 16))
+    const rsvpCount = Number(m.rsvp_count || 0)
+    const capacity = Number(m.capacity || 60)
+    const meetId = encodeURIComponent(String(m.id))
+
     const popupHtml = `
       <div style="min-width: 220px; font-family: system-ui, sans-serif;">
-        <div style="font-size: 0.7rem; font-weight: 800; color: #ff5500; text-transform: uppercase; letter-spacing: 0.04em;">
-          ${m.vibe || 'Cars & Coffee'} · ${m.region || ''}
+        <div style="font-size: 0.7rem; font-weight: 800; color: #d97736; text-transform: uppercase; letter-spacing: 0.04em;">
+          ${vibeEsc} · ${regionEsc}
         </div>
-        <div style="font-weight: 700; font-size: 0.94rem; margin: 3px 0 5px; color: #111;">${m.title}</div>
+        <div style="font-weight: 700; font-size: 0.94rem; margin: 3px 0 5px; color: #111;">${titleEsc}</div>
         <div style="font-size: 0.78rem; color: #444; margin-bottom: 6px;">
-          ☕ ${m.cafe_name || m.address}<br/>
-          📅 ${String(m.meet_datetime || '').slice(0, 16)}<br/>
-          🚗 <strong>${m.rsvp_count || 0} / ${m.capacity || 60}</strong> in Roll-Call
+          ☕ ${cafeEsc}<br/>
+          📅 ${dateEsc}<br/>
+          🚗 <strong>${rsvpCount} / ${capacity}</strong> in Roll-Call
         </div>
-        <a href="#/meets/${m.id}" style="display:inline-block; padding: 5px 12px; background:#ff5500; color:#fff; text-decoration:none; border-radius:999px; font-size:0.76rem; font-weight:700;">
+        <a href="#/meets/${meetId}" style="display:inline-block; padding: 5px 12px; background:#d97736; color:#fff; text-decoration:none; border-radius:999px; font-size:0.76rem; font-weight:700;">
           Inspect Meet & Roll-Call →
         </a>
       </div>

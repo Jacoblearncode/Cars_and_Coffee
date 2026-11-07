@@ -187,6 +187,7 @@ onMounted(() => {
 
           <label for="filter-per-page" class="form-label small fw-semibold">Cards per page</label>
           <select id="filter-per-page" v-model.number="perPage" class="form-select form-select-sm mb-3">
+            <option :value="6">6 per page</option>
             <option :value="9">9 per page</option>
             <option :value="12">12 per page</option>
             <option :value="24">24 per page</option>

@@ -139,6 +139,15 @@ onMounted(async () => {
   if (isEditMode.value) {
     const existing = await meetStore.fetchMeetById(route.params.id)
     if (existing) {
+      const canEdit =
+        authStore.user &&
+        (Number(existing.host_id) === Number(authStore.user.id) || authStore.isAdmin)
+      if (!canEdit) {
+        showToast('You are not authorized to edit this meet.', 'warning')
+        router.push(`/meets/${existing.id}`)
+        return
+      }
+
       form.value = {
         title: existing.title,
         vibe: existing.vibe,
@@ -359,7 +368,7 @@ onMounted(async () => {
           />
         </div>
 
-        <div class="col-md-4 field">
+        <div class="col-md-3 field">
           <label for="meet-start" class="form-label fw-semibold">Start Date &amp; Time *</label>
           <input
             id="meet-start"
@@ -370,7 +379,7 @@ onMounted(async () => {
           />
         </div>
 
-        <div class="col-md-4 field">
+        <div class="col-md-3 field">
           <label for="meet-end" class="form-label fw-semibold">End Date &amp; Time *</label>
           <input
             id="meet-end"
@@ -381,7 +390,7 @@ onMounted(async () => {
           />
         </div>
 
-        <div class="col-md-4 field">
+        <div class="col-md-3 field">
           <label for="meet-capacity" class="form-label fw-semibold">Parking Bay Capacity *</label>
           <input
             id="meet-capacity"
@@ -392,6 +401,15 @@ onMounted(async () => {
             class="form-control"
             required
           />
+        </div>
+
+        <div class="col-md-3 field">
+          <label for="meet-status" class="form-label fw-semibold">Meet Status *</label>
+          <select id="meet-status" v-model="form.status" class="form-select" required>
+            <option value="upcoming">Upcoming (Active RSVP)</option>
+            <option value="completed">Completed (Enables Ratings)</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
         </div>
 
         <div class="col-md-6 field">

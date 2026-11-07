@@ -6,7 +6,7 @@
 
 import { createInitialSeedDatabase, SMART_LINK_PRESETS_2026 } from '../data/seedData'
 
-const DB_STORAGE_KEY = 'cars_and_coffee_local_db_v2'
+const DB_STORAGE_KEY = 'cars_and_coffee_local_db_v6'
 
 export function loadDb() {
   try {

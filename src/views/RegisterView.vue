@@ -1,12 +1,13 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useToast } from '../composables/useToast'
 import { POPULAR_CAR_MAKES, fetchVehicleModelsForMake } from '../services/externalApis'
 import { sendWelcomeEmail } from '../services/emailService'
 import BrandLogo from '../components/BrandLogo.vue'
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const { showToast } = useToast()
@@ -52,7 +53,8 @@ async function handleRegister() {
     const user = await authStore.register(form.value)
     sendWelcomeEmail(user)
     showToast(`Welcome to Roast & Redline (Cars & Coffee), ${user.name}!`)
-    router.push('/meets')
+    const redirect = route.query.redirect || '/meets'
+    router.push(String(redirect))
   } catch (err) {
     showToast(err.message || 'Registration failed.', 'danger')
   }

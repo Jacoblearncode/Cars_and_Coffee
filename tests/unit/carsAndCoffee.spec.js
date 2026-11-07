@@ -73,10 +73,12 @@ describe('Cars & Coffee — Core Architecture, APIs & Stores Suite', () => {
 
     const updated = await meetStore.updateMeet(created.id, {
       title: 'Albert Park Lake Updated Coffee Meet',
-      capacity: 55
+      capacity: 55,
+      status: 'completed'
     })
     expect(updated.title).toBe('Albert Park Lake Updated Coffee Meet')
     expect(updated.capacity).toBe(55)
+    expect(updated.status).toBe('completed')
 
     await meetStore.deleteMeet(created.id)
     await expect(api.get(`meets/${created.id}`)).rejects.toThrow()
@@ -121,6 +123,8 @@ describe('Cars & Coffee — Core Architecture, APIs & Stores Suite', () => {
 
     const comment = await meetStore.addComment('post', newPost.id, 'Love the pop-up headlights!')
     expect(comment.body).toBe('Love the pop-up headlights!')
+
+    await meetStore.deleteComment(comment.id, 'post', newPost.id)
 
     await meetStore.deletePost(newPost.id)
   })
@@ -188,6 +192,18 @@ describe('Cars & Coffee — Core Architecture, APIs & Stores Suite', () => {
     const buttons = wrapper.findAll('button.page-link')
     await buttons[2].trigger('click')
     expect(wrapper.emitted('change')).toBeTruthy()
+  })
+
+  it('renders PaginationBar with ellipsis truncation for large page counts (e.g. 1 ... 4 5 6 7 8 ... 12)', () => {
+    const wrapper = mount(PaginationBar, {
+      props: { page: 6, totalPages: 12, total: 144 }
+    })
+    expect(wrapper.text()).toContain('Page 6 of 12')
+    expect(wrapper.text()).toContain('1')
+    expect(wrapper.text()).toContain('…')
+    expect(wrapper.text()).toContain('12')
+    const active = wrapper.find('.page-item.active')
+    expect(active.text()).toBe('6')
   })
 
   it('protects member privacy: hides user emails in insights for guests, reveals only to admin', async () => {

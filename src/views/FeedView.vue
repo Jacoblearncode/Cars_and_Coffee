@@ -13,6 +13,7 @@ const { showToast } = useToast()
 
 const searchQuery = ref('')
 const sortBy = ref('newest')
+const perPage = ref(8)
 const currentPage = ref(1)
 
 const showComposer = ref(false)
@@ -35,7 +36,7 @@ async function loadFeed() {
     search: searchQuery.value,
     sort: sortBy.value,
     page: currentPage.value,
-    limit: 8
+    limit: perPage.value
   })
 }
 
@@ -110,12 +111,22 @@ async function handleAddPostComment(postId) {
   showToast('Comment added!')
 }
 
+async function handleDeleteComment(commentId, postId) {
+  await meetStore.deleteComment(commentId, 'post', postId)
+  showToast('Comment removed.')
+}
+
+function canDeleteComment(comment) {
+  if (!authStore.isAuthenticated) return false
+  return Number(comment.user_id) === Number(authStore.user.id) || authStore.isAdmin
+}
+
 function canEditPost(post) {
   if (!authStore.isAuthenticated) return false
   return Number(post.user_id) === Number(authStore.user.id) || authStore.isAdmin
 }
 
-watch(sortBy, () => {
+watch([sortBy, perPage], () => {
   currentPage.value = 1
   loadFeed()
 })
@@ -250,7 +261,7 @@ onMounted(async () => {
     <!-- Search & Sort Bar -->
     <section class="cc-tile p-3 mb-4" aria-label="Search and sort community posts">
       <div class="row g-2 align-items-center">
-        <div class="col-md-8">
+        <div class="col-md-7">
           <label for="feed-search" class="visually-hidden">Search posts</label>
           <div class="input-group input-group-sm">
             <span class="input-group-text"><i class="bi bi-search" style="color: var(--cc-accent)"></i></span>
@@ -259,7 +270,7 @@ onMounted(async () => {
               v-model="searchQuery"
               type="search"
               class="form-control"
-              placeholder="Search 36+ snaps by car model, member, location, or keyword..."
+              placeholder="Search 80+ snaps by car model, member, location, or keyword..."
               @input="
                 () => {
                   currentPage = 1
@@ -269,11 +280,17 @@ onMounted(async () => {
             />
           </div>
         </div>
-        <div class="col-md-4 d-flex align-items-center gap-2">
+        <div class="col-md-5 d-flex align-items-center justify-content-md-end gap-2 flex-wrap">
           <label for="feed-sort" class="small text-secondary text-nowrap mb-0">Sort:</label>
-          <select id="feed-sort" v-model="sortBy" class="form-select form-select-sm rounded-pill">
-            <option value="newest">Newest Snaps First</option>
-            <option value="popular">Most Liked &amp; Discussed</option>
+          <select id="feed-sort" v-model="sortBy" class="form-select form-select-sm rounded-pill" style="min-width: 140px; width: auto">
+            <option value="newest">Newest First</option>
+            <option value="popular">Most Liked</option>
+          </select>
+          <select id="feed-per-page" v-model.number="perPage" class="form-select form-select-sm rounded-pill" style="width: auto">
+            <option :value="6">6 / page</option>
+            <option :value="8">8 / page</option>
+            <option :value="12">12 / page</option>
+            <option :value="24">24 / page</option>
           </select>
         </div>
       </div>
@@ -359,9 +376,18 @@ onMounted(async () => {
                 <div
                   v-for="c in post.comments"
                   :key="c.id"
-                  class="small py-1 border-bottom border-secondary border-opacity-10"
+                  class="small py-1 border-bottom border-secondary border-opacity-10 d-flex justify-content-between align-items-center"
                 >
-                  <strong>{{ c.user_name }}:</strong> {{ c.body }}
+                  <div><strong>{{ c.user_name }}:</strong> {{ c.body }}</div>
+                  <button
+                    v-if="canDeleteComment(c)"
+                    type="button"
+                    class="btn btn-sm btn-link text-danger p-0 ms-2"
+                    aria-label="Delete comment"
+                    @click="handleDeleteComment(c.id, post.id)"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
                 </div>
               </div>
 

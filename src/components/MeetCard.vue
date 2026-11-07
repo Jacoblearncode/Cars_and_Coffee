@@ -60,7 +60,8 @@ onMounted(async () => {
     weather.value = await fetchMeetWeather(
       props.meet.latitude,
       props.meet.longitude,
-      props.meet.region
+      props.meet.region,
+      props.meet.meet_datetime
     )
   }
 })

@@ -1,5 +1,6 @@
+
 /**
- * Cars & Coffee — Vue Router Configuration & Navigation Guards (Syed's Feature)
+ * Cars & Coffee — Vue Router Configuration & Navigation Guards
  * Uses createWebHashHistory() so page refreshes never 404 on Swinburne's Mercury Web Server.
  */
 
@@ -15,6 +16,7 @@ import ExploreMapView from '../views/ExploreMapView.vue'
 import SavedMeetsView from '../views/SavedMeetsView.vue'
 import GarageProfileView from '../views/GarageProfileView.vue'
 import InsightsView from '../views/InsightsView.vue'
+import SmartRecommendationsView from '../views/SmartRecommendationsView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 
@@ -30,6 +32,12 @@ export const routes = [
     name: 'meets',
     component: MeetsListView,
     meta: { title: 'Browse Coffee Meets — Cars & Coffee', access: 'public' }
+  },
+  {
+    path: '/meet-picks',
+    name: 'meet-picks',
+    component: SmartRecommendationsView,
+    meta: { title: 'Smart Meet Picks — Cars & Coffee', access: 'public' }
   },
   {
     path: '/meets/new',

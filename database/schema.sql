@@ -14,6 +14,8 @@ DROP TABLE IF EXISTS login_attempts;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS likes;
 DROP TABLE IF EXISTS posts;
+DROP TABLE IF EXISTS meet_checkins;
+DROP TABLE IF EXISTS meet_checkin_codes;
 DROP TABLE IF EXISTS meet_rsvps;
 DROP TABLE IF EXISTS meets;
 DROP TABLE IF EXISTS users;
@@ -73,7 +75,28 @@ CREATE TABLE meet_rsvps (
     CONSTRAINT fk_rsvps_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
--- 4. Social Community Posts Table (Car Spotting, Coffee Recaps & Build Updates)
+-- 4. Event QR Check-In Tables
+CREATE TABLE meet_checkin_codes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    meet_id INT NOT NULL UNIQUE,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    created_by INT NOT NULL,
+    created_at DATETIME NOT NULL,
+    CONSTRAINT fk_checkin_code_meet FOREIGN KEY (meet_id) REFERENCES meets(id) ON DELETE CASCADE,
+    CONSTRAINT fk_checkin_code_user FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+CREATE TABLE meet_checkins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    meet_id INT NOT NULL,
+    user_id INT NOT NULL,
+    checked_in_at DATETIME NOT NULL,
+    UNIQUE KEY uq_checkin_meet_user (meet_id, user_id),
+    CONSTRAINT fk_checkin_meet FOREIGN KEY (meet_id) REFERENCES meets(id) ON DELETE CASCADE,
+    CONSTRAINT fk_checkin_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- 5. Social Community Posts Table (Car Spotting, Coffee Recaps & Build Updates)
 CREATE TABLE posts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

@@ -80,16 +80,18 @@ onMounted(async () => {
 <template>
   <div class="container">
     <!-- Hero -->
-    <section class="cc-hero2 mb-4 cc-rise" aria-labelledby="home-title">
+    <section class="cc-hero2 mb-4 cc-rise cc-cinematic-hero" aria-labelledby="home-title">
+      <div class="cc-hero2-scanline" aria-hidden="true"></div>
+      <div class="cc-hero2-orbit" aria-hidden="true"></div>
       <div class="cc-hero2-wordmark" aria-hidden="true">ROAST &amp; REDLINE</div>
       <div class="cc-hero2-body">
         <div class="row g-4 align-items-end">
           <div class="col-lg-7">
-            <span class="cc-bracket-label">[ 01 // MELBOURNE &amp; MALAYSIA PADDOCK ]</span>
-            <h1 id="home-title" class="display-5 fw-bold mt-2 mb-3">
+            <span class="cc-bracket-label cc-hero-eyebrow"><span class="cc-live-dot"></span>[ 01 // MELBOURNE &amp; MALAYSIA PADDOCK ]</span>
+            <h1 id="home-title" class="display-5 fw-bold mt-2 mb-3 cc-hero-title">
               Early morning espresso.<br />Good cars. Zero ego.
             </h1>
-            <form class="cc-glass cc-search-pill" @submit.prevent="handleHeroSearch">
+            <form class="cc-glass cc-search-pill cc-hero-search" @submit.prevent="handleHeroSearch">
               <label for="hero-search" class="visually-hidden">Search meets, cafes, or suburbs</label>
               <i class="bi bi-search text-warning ms-3"></i>
               <input
@@ -120,7 +122,7 @@ onMounted(async () => {
             </div>
           </div>
           <div class="col-lg-5">
-            <div class="cc-glass p-4">
+            <div class="cc-glass p-4 cc-hero-side-card">
               <p class="small mb-3" style="color: rgba(245, 239, 232, 0.88)">
                 Browse <strong>{{ totalMeetsCount }}+</strong> weekend coffee runs across
                 Victoria, Klang Valley, Penang, and Sarawak—or host your own meet with venue search and low-car ramp instructions.
@@ -140,7 +142,7 @@ onMounted(async () => {
     </section>
 
     <!-- Bento: community stats + upcoming -->
-    <section class="cc-bento mb-4" aria-labelledby="upcoming-meets-heading">
+    <section class="cc-bento mb-4 cc-motion-reveal" aria-labelledby="upcoming-meets-heading">
       <div class="cc-tile cc-tile-accent cc-span-3 d-flex flex-column justify-content-between">
         <div>
           <span class="cc-bracket-label text-white">[ COMMUNITY ROSTER ]</span>
@@ -182,14 +184,14 @@ onMounted(async () => {
       </div>
     </section>
 
-    <div class="row g-4 mb-5">
+    <div class="row g-4 mb-5 cc-motion-reveal cc-motion-delay-1">
       <div v-for="m in featuredMeets" :key="m.id" class="col-md-6 col-lg-4">
         <MeetCard :meet="m" @toggle-like="handleToggleLike" @toggle-offline="handleOfflineNotify" />
       </div>
     </div>
 
     <!-- Social wall -->
-    <section class="mb-4" aria-labelledby="spotting-feed-heading">
+    <section class="mb-4 cc-motion-reveal cc-motion-delay-2" aria-labelledby="spotting-feed-heading">
       <div class="d-flex flex-wrap justify-content-between align-items-end mb-3">
         <div>
           <span class="cc-bracket-label">[ SOCIAL WALL // 36+ SNAPS ]</span>

@@ -65,10 +65,27 @@ onMounted(() => {
     <Navbar />
 
     <main id="main-content" class="flex-grow-1 py-4" tabindex="-1">
-      <router-view />
+      <router-view v-slot="{ Component, route }">
+        <Transition name="cc-page-transition" mode="out-in">
+          <component :is="Component" :key="route.fullPath" />
+        </Transition>
+      </router-view>
     </main>
 
     <Footer />
     <ToastContainer />
   </div>
 </template>
+
+<style>
+.cc-page-transition-enter-active,
+.cc-page-transition-leave-active {
+  transition: opacity .22s ease, transform .22s ease;
+}
+.cc-page-transition-enter-from { opacity: 0; transform: translateY(10px); }
+.cc-page-transition-leave-to { opacity: 0; transform: translateY(-6px); }
+@media (prefers-reduced-motion: reduce) {
+  .cc-page-transition-enter-active,
+  .cc-page-transition-leave-active { transition: none !important; }
+}
+</style>

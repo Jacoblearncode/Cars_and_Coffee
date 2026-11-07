@@ -359,6 +359,51 @@ export async function handleLocalRequest(method, rawEndpoint, params = {}, body 
     }
   }
 
+  // QR Meet Check-In (LocalDB / offline demo mode)
+  if (endpoint === 'checkin/dashboard' && method === 'GET') {
+    if (!currentUser) throw localError('Please sign in to view check-in tools.', 401)
+    const hosted = db.meets.filter((m) => Number(m.host_id) === Number(currentUser.id) || currentUser.role === 'admin')
+    const rows = hosted.map((meet) => {
+      const code = (db.meet_checkin_codes || []).find((c) => Number(c.meet_id) === Number(meet.id))
+      const checked = (db.meet_checkins || []).filter((c) => Number(c.meet_id) === Number(meet.id))
+      return { id: Number(meet.id), title: meet.title, meet_datetime: meet.meet_datetime, capacity: Number(meet.capacity || 0), rsvp_count: db.meet_rsvps.filter((r) => Number(r.meet_id) === Number(meet.id)).length, checked_in_count: checked.length, checkin_token: code ? code.token : null, attendees: checked.map((c) => { const u = db.users.find((x) => Number(x.id) === Number(c.user_id)); return { user_id: c.user_id, name: u ? u.name : 'Member', checked_in_at: c.checked_in_at } }) }
+    })
+    return { meets: rows }
+  }
+
+  const checkinCodeMatch = endpoint.match(/^meets\/(\d+)\/checkin-code$/)
+  if (checkinCodeMatch && method === 'POST') {
+    if (!currentUser) throw localError('Please sign in first.', 401)
+    const meetId = Number(checkinCodeMatch[1])
+    const meet = db.meets.find((m) => Number(m.id) === meetId)
+    if (!meet) throw localError('Meet not found.', 404)
+    if (Number(meet.host_id) !== Number(currentUser.id) && currentUser.role !== 'admin') throw localError('Only the meet organiser can generate its check-in QR code.', 403)
+    if (!Array.isArray(db.meet_checkin_codes)) db.meet_checkin_codes = []
+    let record = db.meet_checkin_codes.find((c) => Number(c.meet_id) === meetId)
+    const tokenValue = () => { try { return Array.from(crypto.getRandomValues(new Uint8Array(18))).map((n) => n.toString(16).padStart(2, '0')).join('') } catch { return `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}` } }
+    if (!record) { record = { meet_id: meetId, token: tokenValue(), created_at: nowSql() }; db.meet_checkin_codes.push(record) }
+    saveDb(db)
+    return { meet_id: meetId, token: record.token, title: meet.title }
+  }
+
+  if (endpoint === 'checkin/scan' && method === 'POST') {
+    if (!currentUser) throw localError('Please sign in before checking in.', 401)
+    const tokenValue = String(body.token || '').trim()
+    if (!tokenValue) throw localError('Enter or scan a valid meet QR code.', 400)
+    const code = (db.meet_checkin_codes || []).find((c) => c.token === tokenValue)
+    if (!code) throw localError('This QR code is invalid or has expired.', 404)
+    const meet = db.meets.find((m) => Number(m.id) === Number(code.meet_id))
+    if (!meet) throw localError('Meet not found.', 404)
+    const rsvp = db.meet_rsvps.find((r) => Number(r.meet_id) === Number(meet.id) && Number(r.user_id) === Number(currentUser.id))
+    if (!rsvp) throw localError('You need to RSVP to this meet before checking in.', 403)
+    if (!Array.isArray(db.meet_checkins)) db.meet_checkins = []
+    const existing = db.meet_checkins.find((c) => Number(c.meet_id) === Number(meet.id) && Number(c.user_id) === Number(currentUser.id))
+    if (existing) throw localError('You have already checked in to this meet.', 409)
+    const entry = { id: nextId(db.meet_checkins), meet_id: Number(meet.id), user_id: Number(currentUser.id), checked_in_at: nowSql() }
+    db.meet_checkins.push(entry); saveDb(db)
+    return { success: true, meet_title: meet.title, checked_in_at: entry.checked_in_at }
+  }
+
   // 4. Meets Collection (`GET /meets`, `POST /meets`)
   if (endpoint === 'meets' && method === 'GET') {
     const search = String(params.search || '')

@@ -68,10 +68,9 @@ export function clearOfflineOutbox() {
   clearQueue()
 }
 export function shouldAttemptPhpApi() {
-  if (typeof window === 'undefined') return false
-  if (import.meta.env && import.meta.env.VITE_USE_PHP_API === 'true') return true
-  const host = window.location.hostname || ''
-  return host.includes('swin.edu.au') || host.includes('mercury')
+  // This project version is configured for frontend-only operation.
+  // All reads and writes use the browser LocalDB (localStorage); no PHP request is made.
+  return false
 }
 
 export function getApiEngineStatus() {

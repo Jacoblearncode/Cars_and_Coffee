@@ -7,6 +7,7 @@ import { useToast } from '../composables/useToast'
 import MeetCard from '../components/MeetCard.vue'
 import PaginationBar from '../components/PaginationBar.vue'
 import { MEET_VIBES } from '../data/seedData'
+import SmartRecommendationsView from './SmartRecommendationsView.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -125,6 +126,8 @@ onMounted(() => {
         </router-link>
       </div>
     </header>
+
+    <SmartRecommendationsView />
 
     <div class="row g-4">
       <!-- Filter sidebar -->

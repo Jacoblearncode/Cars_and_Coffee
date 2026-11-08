@@ -202,9 +202,18 @@ async function request(method, endpoint, { params = {}, body = null } = {}) {
     }
   }
 
+  // Check-in codes are validated by the server and expire in minutes, so they must never be
+  // answered from the local cache or replayed later from the offline outbox.
+  const isCheckIn = /^meets\/\d+\/checkin(-code)?$/.test(endpoint)
+  if (isCheckIn && shouldAttemptPhpApi() && (!isOnline || serverUnreachable)) {
+    const err = new Error('You need a connection to check in. Move into signal and try again.')
+    err.network = true
+    throw err
+  }
+
   // Fallback to LocalDB when offline, out of signal, or running local Vite dev
   activeBackendEngine = 'local-db'
-  const isQueueable = method !== 'GET' && !endpoint.startsWith('auth/')
+  const isQueueable = method !== 'GET' && !endpoint.startsWith('auth/') && !isCheckIn
   const shouldQueue = isQueueable && (!isOnline || serverUnreachable)
   const snapshot = shouldQueue ? await snapshotBeforeLocalWrite(method, endpoint, body, token) : null
   const result = await handleLocalRequest(method, endpoint, params, body || {}, token)
@@ -265,7 +274,7 @@ export const api = {
   put(endpoint, body = {}, params = {}) {
     return request('PUT', endpoint, { params, body })
   },
-  delete(endpoint, params = {}) {
-    return request('DELETE', endpoint, { params })
+  delete(endpoint, params = {}, body = null) {
+    return request('DELETE', endpoint, { params, body })
   }
 }

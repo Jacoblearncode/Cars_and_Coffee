@@ -74,6 +74,12 @@ export const routes = [
     meta: { title: 'My Garage & Profile — Cars & Coffee', requiresAuth: true }
   },
   {
+    path: '/checkin',
+    name: 'checkin',
+    component: () => import('../views/CheckInView.vue'),
+    meta: { title: 'Check In — Cars & Coffee', requiresAuth: true }
+  },
+  {
     path: '/insights',
     name: 'insights',
     component: InsightsView,

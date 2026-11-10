@@ -117,7 +117,7 @@ function enrich_meet_row($pdo, $row, $currentUser) {
     $meetId = intval($row['id']);
 
     $stmtRsvp = $pdo->prepare('
-        SELECT r.id, r.user_id, r.attend_type, r.car_brought, r.created_at, u.name AS user_name, u.avatar AS user_avatar
+        SELECT r.id, r.user_id, r.attend_type, r.car_brought, r.created_at, r.checked_in_at, u.name AS user_name, u.avatar AS user_avatar
         FROM meet_rsvps r
         JOIN users u ON u.id = r.user_id
         WHERE r.meet_id = ?
@@ -150,7 +150,11 @@ function enrich_meet_row($pdo, $row, $currentUser) {
     $row['rsvps'] = $rsvps;
     $row['rsvp_count'] = count($rsvps);
     $row['cars_bringing_count'] = 0;
+    $row['checked_in_count'] = 0;
     foreach ($rsvps as $rv) {
+        if (!empty($rv['checked_in_at'])) {
+            $row['checked_in_count']++;
+        }
         if ($rv['attend_type'] === 'bringing_car') {
             $row['cars_bringing_count']++;
         }
@@ -544,6 +548,111 @@ if (preg_match('/^meets\/(\d+)\/rsvp$/', $endpoint, $matches)) {
         $stmtMeet->execute(array($meetId));
         send_json(array('meet' => enrich_meet_row($pdo, $stmtMeet->fetch(), $user)));
     }
+}
+
+// ----------------------------------------------------------------------------
+// 3b. QR CHECK-IN (`meets/:id/checkin-code`, `meets/:id/checkin`)
+//     The host's screen shows a short-lived signed token as a QR code. Attendees who
+//     RSVP'd scan it on arrival, which stamps `meet_rsvps.checked_in_at`.
+// ----------------------------------------------------------------------------
+define('CHECKIN_TOKEN_TTL', 120);
+
+function checkin_signature($payload) {
+    return base64url_encode(hash_hmac('sha256', 'checkin:' . $payload, JWT_SECRET, true));
+}
+
+function checkin_token_make($meetId) {
+    $payload = intval($meetId) . '.' . (time() + CHECKIN_TOKEN_TTL);
+    return $payload . '.' . checkin_signature($payload);
+}
+
+function checkin_token_valid($token, $meetId) {
+    if (!is_string($token)) {
+        return false;
+    }
+    $parts = explode('.', trim($token));
+    if (count($parts) !== 3 || intval($parts[0]) !== intval($meetId) || intval($parts[1]) < time()) {
+        return false;
+    }
+    $expected = checkin_signature($parts[0] . '.' . $parts[1]);
+    // Constant-time comparison (hash_equals needs PHP 5.6+)
+    if (strlen($expected) !== strlen($parts[2])) {
+        return false;
+    }
+    $diff = 0;
+    for ($i = 0; $i < strlen($expected); $i++) {
+        $diff |= ord($expected[$i]) ^ ord($parts[2][$i]);
+    }
+    return $diff === 0;
+}
+
+if (preg_match('/^meets\/(\d+)\/checkin-code$/', $endpoint, $matches) && $method === 'GET') {
+    $meetId = intval($matches[1]);
+    $user = require_auth($pdo);
+    $stmtMeet = $pdo->prepare('SELECT host_id, status FROM meets WHERE id = ? LIMIT 1');
+    $stmtMeet->execute(array($meetId));
+    $meetRow = $stmtMeet->fetch();
+    if (!$meetRow) {
+        send_error('Meet not found.', 404);
+    }
+    if (intval($meetRow['host_id']) !== intval($user['id']) && $user['role'] !== 'admin') {
+        send_error('Only the host can open check-in.', 403);
+    }
+    if ($meetRow['status'] === 'cancelled') {
+        send_error('This meet was cancelled.', 409);
+    }
+    send_json(array('token' => checkin_token_make($meetId), 'expires_in' => CHECKIN_TOKEN_TTL, 'meet_id' => $meetId));
+}
+
+if (preg_match('/^meets\/(\d+)\/checkin$/', $endpoint, $matches) && ($method === 'POST' || $method === 'DELETE')) {
+    $meetId = intval($matches[1]);
+    $user = require_auth($pdo);
+    $body = get_json_body();
+
+    $stmtMeet = $pdo->prepare('SELECT * FROM meets WHERE id = ? LIMIT 1');
+    $stmtMeet->execute(array($meetId));
+    $meetRow = $stmtMeet->fetch();
+    if (!$meetRow) {
+        send_error('Meet not found.', 404);
+    }
+    if ($meetRow['status'] === 'cancelled') {
+        send_error('This meet was cancelled.', 409);
+    }
+
+    $isHost = intval($meetRow['host_id']) === intval($user['id']) || $user['role'] === 'admin';
+    $targetUserId = intval($user['id']);
+
+    if (isset($body['user_id'])) {
+        // Manual check-in / undo by the host (e.g. attendee's phone died)
+        if (!$isHost) {
+            send_error('Only the host can check in other attendees.', 403);
+        }
+        $targetUserId = intval($body['user_id']);
+    } elseif ($method === 'POST') {
+        if (!checkin_token_valid(isset($body['token']) ? $body['token'] : '', $meetId)) {
+            send_error('That check-in code has expired or is invalid. Ask the host to show a fresh QR code.', 400);
+        }
+    } else {
+        send_error('Specify which attendee to undo.', 400);
+    }
+
+    $stmtRsvp = $pdo->prepare('SELECT id, checked_in_at FROM meet_rsvps WHERE meet_id = ? AND user_id = ? LIMIT 1');
+    $stmtRsvp->execute(array($meetId, $targetUserId));
+    $rsvpRow = $stmtRsvp->fetch();
+    if (!$rsvpRow) {
+        send_error('RSVP to this meet before checking in.', 409);
+    }
+
+    if ($method === 'DELETE') {
+        $stmtUndo = $pdo->prepare('UPDATE meet_rsvps SET checked_in_at = NULL WHERE id = ?');
+        $stmtUndo->execute(array($rsvpRow['id']));
+    } elseif (empty($rsvpRow['checked_in_at'])) {
+        $stmtIn = $pdo->prepare('UPDATE meet_rsvps SET checked_in_at = ? WHERE id = ?');
+        $stmtIn->execute(array(date('Y-m-d H:i:s'), $rsvpRow['id']));
+    }
+
+    $stmtMeet->execute(array($meetId));
+    send_json(array('meet' => enrich_meet_row($pdo, $stmtMeet->fetch(), $user), 'already_checked_in' => !empty($rsvpRow['checked_in_at']) && $method === 'POST'));
 }
 
 // ============================================================================

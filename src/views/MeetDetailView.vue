@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMeetStore } from '../stores/meetStore'
 import { useAuthStore } from '../stores/authStore'
@@ -8,6 +8,8 @@ import { useToast } from '../composables/useToast'
 import { fetchMeetWeather, POPULAR_CAR_MAKES, fetchVehicleModelsForMake } from '../services/externalApis'
 import { sendRsvpEmail } from '../services/emailService'
 import EventMap from '../components/EventMap.vue'
+// Loaded on demand so the QR library only downloads for hosts
+const CheckInHostPanel = defineAsyncComponent(() => import('../components/CheckInHostPanel.vue'))
 
 const route = useRoute()
 const router = useRouter()
@@ -130,6 +132,32 @@ async function handleRsvpSubmit() {
       ? `Added ${carLabel} to the Car Roll-Call!`
       : 'RSVP saved — see you for coffee!'
   )
+}
+
+function formatCheckInTime(raw) {
+  if (!raw) return ''
+  const dt = new Date(String(raw).replace(' ', 'T'))
+  return Number.isNaN(dt.getTime())
+    ? ''
+    : dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
+}
+
+async function handleManualCheckIn(rv) {
+  try {
+    await meetStore.checkInToMeet(meet.value.id, { userId: rv.user_id })
+    showToast(`${rv.user_name} marked as arrived.`)
+  } catch (err) {
+    showToast(err.message || 'Could not check that attendee in.', 'danger')
+  }
+}
+
+async function handleUndoCheckIn(rv) {
+  try {
+    await meetStore.undoCheckIn(meet.value.id, rv.user_id)
+    showToast(`Check-in removed for ${rv.user_name}.`, 'warning')
+  } catch (err) {
+    showToast(err.message || 'Could not undo that check-in.', 'danger')
+  }
 }
 
 async function handleCancelRsvp() {
@@ -329,9 +357,14 @@ onMounted(() => {
                       Parking Lot Car Roll-Call ({{ meet.rsvp_count || 0 }} / {{ meet.capacity }})
                     </h2>
                   </div>
-                  <span class="badge cc-badge-accent font-mono">
-                    {{ meet.cars_bringing_count || 0 }} Cars Confirmed
-                  </span>
+                  <div class="d-flex flex-column align-items-end gap-1">
+                    <span class="badge cc-badge-accent font-mono">
+                      {{ meet.cars_bringing_count || 0 }} Cars Confirmed
+                    </span>
+                    <span v-if="meet.checked_in_count" class="badge text-bg-success font-mono">
+                      <i class="bi bi-qr-code-scan me-1"></i>{{ meet.checked_in_count }} Checked In
+                    </span>
+                  </div>
                 </div>
 
                 <div v-if="!meet.rsvps || meet.rsvps.length === 0" class="cc-panel p-3 text-center small text-secondary">
@@ -353,14 +386,39 @@ onMounted(() => {
                           {{ rv.car_brought }}
                         </div>
                       </div>
-                      <span
-                        class="badge font-mono"
-                        :class="
-                          rv.attend_type === 'bringing_car' ? 'text-bg-warning text-dark' : 'text-bg-secondary'
-                        "
-                      >
-                        {{ rv.attend_type === 'bringing_car' ? 'Bringing Car' : 'Spectating' }}
-                      </span>
+                      <div class="d-flex flex-column align-items-end gap-1">
+                        <span
+                          class="badge font-mono"
+                          :class="
+                            rv.attend_type === 'bringing_car' ? 'text-bg-warning text-dark' : 'text-bg-secondary'
+                          "
+                        >
+                          {{ rv.attend_type === 'bringing_car' ? 'Bringing Car' : 'Spectating' }}
+                        </span>
+                        <span v-if="rv.checked_in_at" class="badge text-bg-success font-mono">
+                          <i class="bi bi-check2-circle me-1"></i>Arrived {{ formatCheckInTime(rv.checked_in_at) }}
+                        </span>
+                        <template v-if="canModifyMeet && meet.status !== 'cancelled'">
+                          <button
+                            v-if="!rv.checked_in_at"
+                            type="button"
+                            class="btn btn-link btn-sm p-0 small"
+                            :aria-label="`Mark ${rv.user_name} as arrived`"
+                            @click="handleManualCheckIn(rv)"
+                          >
+                            Mark arrived
+                          </button>
+                          <button
+                            v-else
+                            type="button"
+                            class="btn btn-link btn-sm p-0 small text-secondary"
+                            :aria-label="`Undo check-in for ${rv.user_name}`"
+                            @click="handleUndoCheckIn(rv)"
+                          >
+                            Undo
+                          </button>
+                        </template>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -441,6 +499,14 @@ onMounted(() => {
 
         <!-- Right Column: Live Weather, RSVP Roll-Call Form & Interactive Map -->
         <div class="col-lg-4">
+          <!-- Host-only QR check-in -->
+          <CheckInHostPanel
+            v-if="canModifyMeet && meet.status !== 'cancelled'"
+            :meet-id="meet.id"
+            :checked-in="meet.checked_in_count || 0"
+            :total="meet.rsvp_count || 0"
+          />
+
           <!-- RSVP & Car Roll-Call Card -->
           <div class="cc-tile mb-4">
             <div class="cc-bracket-label">[ LOCK IN YOUR BAY ]</div>
@@ -451,6 +517,17 @@ onMounted(() => {
                 <i class="bi bi-check-circle-fill me-1"></i>
                 You are RSVPed: <strong>{{ myRsvp.car_brought }}</strong>
               </div>
+              <div v-if="myRsvp && myRsvp.checked_in_at" class="alert alert-success small py-2 mb-3">
+                <i class="bi bi-qr-code-scan me-1"></i>
+                Checked in at {{ formatCheckInTime(myRsvp.checked_in_at) }}
+              </div>
+              <router-link
+                v-else-if="myRsvp && meet.status !== 'cancelled' && !canModifyMeet"
+                :to="{ path: '/checkin', query: { m: meet.id } }"
+                class="btn btn-outline-warning cc-pill-btn w-100 mb-3"
+              >
+                <i class="bi bi-qr-code-scan me-1"></i>I've arrived - scan to check in
+              </router-link>
 
               <form @submit.prevent="handleRsvpSubmit">
                 <div class="mb-3">

@@ -70,6 +70,7 @@ CREATE TABLE meet_rsvps (
     attend_type ENUM('bringing_car', 'spectating') NOT NULL DEFAULT 'bringing_car',
     car_brought VARCHAR(150) DEFAULT NULL,
     created_at DATETIME NOT NULL,
+    checked_in_at DATETIME DEFAULT NULL, -- set when the attendee scans the host's QR code at the meet
     UNIQUE KEY uq_rsvp_meet_user (meet_id, user_id),
     CONSTRAINT fk_rsvps_meet FOREIGN KEY (meet_id) REFERENCES meets(id) ON DELETE CASCADE,
     CONSTRAINT fk_rsvps_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

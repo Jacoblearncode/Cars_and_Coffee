@@ -89,6 +89,12 @@ export const routes = [
     meta: { title: '3D Garage Lab — Cars & Coffee', access: 'public' }
   },
   {
+    path: '/checkin',
+    name: 'checkin',
+    component: () => import('../views/CheckInView.vue'),
+    meta: { title: 'Check In — Cars & Coffee', requiresAuth: true }
+  },
+  {
     path: '/insights',
     name: 'insights',
     component: InsightsView,

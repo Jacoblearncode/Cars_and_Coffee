@@ -101,6 +101,33 @@ export const useMeetStore = defineStore('meets', () => {
     return res.meet
   }
 
+  function applyMeetUpdate(meetId, updated) {
+    const idx = meets.value.findIndex((m) => Number(m.id) === Number(meetId))
+    if (idx >= 0) meets.value[idx] = updated
+    if (currentMeet.value && Number(currentMeet.value.id) === Number(meetId)) {
+      currentMeet.value = { ...currentMeet.value, ...updated }
+    }
+  }
+
+  /** Host: fetch a short-lived signed token to render as the check-in QR code. */
+  async function fetchCheckInCode(meetId) {
+    return api.get(`meets/${meetId}/checkin-code`)
+  }
+
+  /** Attendee: redeem a scanned token. Host: pass `userId` to check someone in manually. */
+  async function checkInToMeet(meetId, { token = null, userId = null } = {}) {
+    const body = userId !== null ? { user_id: userId } : { token }
+    const res = await api.post(`meets/${meetId}/checkin`, body)
+    applyMeetUpdate(meetId, res.meet)
+    return res
+  }
+
+  async function undoCheckIn(meetId, userId) {
+    const res = await api.delete(`meets/${meetId}/checkin`, {}, { user_id: userId })
+    applyMeetUpdate(meetId, res.meet)
+    return res
+  }
+
   async function toggleLike(targetType, targetId) {
     const res = await api.post('likes', { target_type: targetType, target_id: targetId })
     if (targetType === 'meet') {
@@ -215,6 +242,9 @@ export const useMeetStore = defineStore('meets', () => {
     deleteMeet,
     rsvpToMeet,
     cancelRsvp,
+    fetchCheckInCode,
+    checkInToMeet,
+    undoCheckIn,
     toggleLike,
     addComment,
     deleteComment,

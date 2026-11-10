@@ -7,6 +7,7 @@
 import { createInitialSeedDatabase, SMART_LINK_PRESETS_2026 } from '../data/seedData'
 
 const DB_STORAGE_KEY = 'cars_and_coffee_local_db_v6'
+const CHECKIN_TOKEN_TTL_MS = 120 * 1000
 
 export function loadDb() {
   try {
@@ -118,6 +119,7 @@ function enrichMeet(db, meet, currentUser) {
     rsvps,
     rsvp_count: rsvps.length,
     cars_bringing_count: carsBringingCount,
+    checked_in_count: rsvps.filter((r) => r.checked_in_at).length,
     likes_count: likedBy.length,
     liked_by: likedBy,
     is_masked: !isAuthed,
@@ -620,6 +622,62 @@ export async function handleLocalRequest(method, rawEndpoint, params = {}, body 
       }
       return { meet: enrichMeet(db, meetRow, currentUser) }
     }
+  }
+
+  // 6b. QR check-in (`meets/:id/checkin-code`, `meets/:id/checkin`) - mirrors the PHP endpoints.
+  // In local demo mode the code is a random token kept in `db.checkin_tokens` (never sent to clients).
+  const codeMatch = endpoint.match(/^meets\/(\d+)\/checkin-code$/)
+  if (codeMatch && method === 'GET') {
+    if (!currentUser) throw localError('Please sign in first.', 401)
+    const meetId = Number(codeMatch[1])
+    const meetRow = db.meets.find((m) => Number(m.id) === meetId)
+    if (!meetRow) throw localError('Meet not found.', 404)
+    if (Number(meetRow.host_id) !== Number(currentUser.id) && currentUser.role !== 'admin') {
+      throw localError('Only the host can open check-in.', 403)
+    }
+    if (meetRow.status === 'cancelled') throw localError('This meet was cancelled.', 409)
+    const token = `${meetId}.${Date.now() + CHECKIN_TOKEN_TTL_MS}.${Math.random().toString(36).slice(2, 12)}`
+    db.checkin_tokens = { ...(db.checkin_tokens || {}), [meetId]: token }
+    saveDb(db)
+    return { token, expires_in: CHECKIN_TOKEN_TTL_MS / 1000, meet_id: meetId }
+  }
+
+  const checkinMatch = endpoint.match(/^meets\/(\d+)\/checkin$/)
+  if (checkinMatch && (method === 'POST' || method === 'DELETE')) {
+    if (!currentUser) throw localError('Please sign in to check in.', 401)
+    const meetId = Number(checkinMatch[1])
+    const meetRow = db.meets.find((m) => Number(m.id) === meetId)
+    if (!meetRow) throw localError('Meet not found.', 404)
+    if (meetRow.status === 'cancelled') throw localError('This meet was cancelled.', 409)
+
+    const isHost = Number(meetRow.host_id) === Number(currentUser.id) || currentUser.role === 'admin'
+    let targetUserId = Number(currentUser.id)
+    if (body.user_id !== undefined && body.user_id !== null) {
+      if (!isHost) throw localError('Only the host can check in other attendees.', 403)
+      targetUserId = Number(body.user_id)
+    } else if (method === 'POST') {
+      const issued = (db.checkin_tokens || {})[meetId]
+      const expiry = Number(String(body.token || '').split('.')[1])
+      if (!issued || body.token !== issued || !(expiry >= Date.now())) {
+        throw localError('That check-in code has expired or is invalid. Ask the host to show a fresh QR code.', 400)
+      }
+    } else {
+      throw localError('Specify which attendee to undo.', 400)
+    }
+
+    const rsvp = db.meet_rsvps.find(
+      (r) => Number(r.meet_id) === meetId && Number(r.user_id) === targetUserId
+    )
+    if (!rsvp) throw localError('RSVP to this meet before checking in.', 409)
+
+    const already = Boolean(rsvp.checked_in_at)
+    if (method === 'DELETE') {
+      rsvp.checked_in_at = null
+    } else if (!already) {
+      rsvp.checked_in_at = nowSql()
+    }
+    saveDb(db)
+    return { meet: enrichMeet(db, meetRow, currentUser), already_checked_in: method === 'POST' && already }
   }
 
   // 7. Social Community Posts (`posts`, `posts/:id`)

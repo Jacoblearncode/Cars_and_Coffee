@@ -7,7 +7,6 @@ import { useToast } from '../composables/useToast'
 import MeetCard from '../components/MeetCard.vue'
 import PaginationBar from '../components/PaginationBar.vue'
 import { MEET_VIBES } from '../data/seedData'
-import SmartRecommendationsView from './SmartRecommendationsView.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -127,7 +126,19 @@ onMounted(() => {
       </div>
     </header>
 
-    <SmartRecommendationsView />
+    <!-- Smart Picks Discovery Banner -->
+    <div class="alert alert-dark d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 rounded-4 p-3 border-secondary border-opacity-25" style="background: rgba(255, 194, 71, 0.05);">
+      <div class="d-flex align-items-center gap-3">
+        <span class="fs-3">✨</span>
+        <div>
+          <div class="fw-bold text-white">Looking for personalized meet recommendations?</div>
+          <div class="small text-secondary">Match meets tailored to your vehicle type, preferred vibe, and region.</div>
+        </div>
+      </div>
+      <router-link to="/meet-picks" class="btn btn-sm btn-cc-primary text-nowrap px-3 rounded-pill">
+        <i class="bi bi-stars me-1"></i>Explore Smart Picks
+      </router-link>
+    </div>
 
     <div class="row g-4">
       <!-- Filter sidebar -->

@@ -124,44 +124,59 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="smart-picks-inline py-4 py-lg-5">
-    <section class="mb-4">
-      <p class="text-uppercase small fw-bold mb-2" style="color:var(--cc-accent);letter-spacing:.14em">Personalised discovery</p>
-      <h2 class="h3 fw-bold mb-2">Smart Meet Picks</h2>
-      <p class="lead" style="color:var(--cc-muted);max-width:760px">Tell us what you enjoy. The recommendation engine scores upcoming meets against your location, preferred event vibe and car interests.</p>
-    </section>
+  <div class="container">
+    <div class="mb-4">
+      <div class="cc-bracket-label">[ 03 // PERSONALISED DISCOVERY ]</div>
+      <h1 class="h2 fw-bold mb-1">Smart Meet Picks</h1>
+      <p class="text-secondary small mb-0">
+        Tell us what you enjoy. The recommendation engine scores upcoming meets against your location, preferred event vibe, and car interests.
+      </p>
+    </div>
 
-    <section class="card border-0 shadow-sm rounded-4 p-3 p-md-4 mb-4" style="background:var(--cc-surface)">
+    <section class="cc-tile mb-4">
       <div class="row g-3 align-items-end">
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Preferred region</label>
+          <label class="form-label small fw-semibold">Preferred region</label>
           <select v-model="region" class="form-select" @change="savePreferences">
             <option>Malaysia</option><option>Australia</option><option>All</option>
           </select>
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Meet atmosphere</label>
+          <label class="form-label small fw-semibold">Meet atmosphere</label>
           <select v-model="vibe" class="form-select" @change="savePreferences">
             <option value="All">Any atmosphere</option>
             <option v-for="item in MEET_VIBES" :key="item.slug" :value="item.name">{{ item.name }}</option>
           </select>
         </div>
         <div class="col-md-4">
-          <button class="btn btn-cc-primary w-100" @click="refreshRecommendations"><i class="bi bi-stars me-2"></i>Find my meets</button>
+          <button class="btn btn-cc-primary w-100 rounded-pill" @click="refreshRecommendations">
+            <i class="bi bi-stars me-2"></i>Find my meets
+          </button>
         </div>
       </div>
-      <hr class="my-4">
-      <label class="form-label fw-semibold">Choose your interests</label>
+      <hr class="my-4 opacity-25">
+      <label class="form-label small fw-semibold">Choose your interests</label>
       <div class="d-flex flex-wrap gap-2">
-        <button v-for="item in interestOptions" :key="item" class="btn rounded-pill btn-sm" :class="interests.includes(item) ? 'btn-dark' : 'btn-outline-secondary'" @click="toggleInterest(item)">
+        <button
+          v-for="item in interestOptions"
+          :key="item"
+          type="button"
+          class="btn rounded-pill btn-sm"
+          :class="interests.includes(item) ? 'btn-dark' : 'btn-outline-secondary'"
+          @click="toggleInterest(item)"
+        >
           <i v-if="interests.includes(item)" class="bi bi-check2 me-1"></i>{{ item }}
         </button>
       </div>
-      <p class="small mt-3 mb-0" style="color:var(--cc-muted)"><i class="bi bi-shield-check me-1"></i>Your preferences are saved only in this browser.</p>
+      <p class="small text-secondary mt-3 mb-0">
+        <i class="bi bi-shield-check me-1"></i>Your preferences are saved only in this browser.
+      </p>
     </section>
 
-    <section class="rounded-4 p-3 p-md-4 mb-4" style="background:var(--cc-surface);border:1px solid var(--cc-border)">
-      <h3 class="h6 fw-bold mb-3"><i class="bi bi-calculator me-2" style="color:var(--cc-accent)"></i>How the match score is calculated</h3>
+    <section class="cc-tile mb-4">
+      <h2 class="h6 fw-bold mb-3">
+        <i class="bi bi-calculator me-2" style="color:var(--cc-accent)"></i>How the match score is calculated
+      </h2>
       <div class="row g-3 small">
         <div class="col-6 col-md"><strong>30%</strong><div class="text-secondary">Preferred region</div></div>
         <div class="col-6 col-md"><strong>25%</strong><div class="text-secondary">Meet atmosphere</div></div>
@@ -169,51 +184,95 @@ onMounted(() => {
         <div class="col-6 col-md"><strong>5%</strong><div class="text-secondary">Upcoming event</div></div>
         <div class="col-6 col-md"><strong>5%</strong><div class="text-secondary">Space available</div></div>
       </div>
-      <p class="small text-secondary mt-3 mb-0">The system adds the weights for matched criteria and divides by the weights that apply to your selected preferences. If you choose “All” for a filter, that criterion is left out of the calculation.</p>
+      <p class="small text-secondary mt-3 mb-0">
+        The system adds the weights for matched criteria and divides by the weights that apply to your selected preferences. If you choose “All” for a filter, that criterion is left out of the calculation.
+      </p>
     </section>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <div><h2 class="h4 fw-bold mb-1">Recommended for you</h2><p class="small mb-0" style="color:var(--cc-muted)">Ranked by your preference match score</p></div>
-      <span class="badge rounded-pill text-bg-dark">{{ recommendations.length }} matches</span>
+      <div>
+        <h2 class="h4 fw-bold mb-1">Recommended for you</h2>
+        <p class="small text-secondary mb-0">Ranked by your preference match score</p>
+      </div>
+      <span class="badge rounded-pill text-bg-dark font-mono">{{ recommendations.length }} matches</span>
     </div>
-    <div v-if="loading" class="py-5 text-center"><div class="spinner-border" role="status"></div><p class="mt-2">Finding your best meets…</p></div>
-    <div v-else-if="!recommendations.length" class="alert alert-info">No meets found. Try changing your region or interests.</div>
-    <div v-else class="row g-4">
-      <div v-for="meet in recommendations" :key="meet.id" class="col-md-6 col-xl-4">
-        <div class="h-100 position-relative">
-          <div class="position-absolute top-0 end-0 m-2 badge text-bg-success" style="z-index:2">{{ meet.matchScore }}% match</div>
-          <MeetCard :meet="meet" />
-          <div class="rounded-3 p-3 mt-2 small" style="background:var(--cc-surface);border:1px solid var(--cc-border)">
-            <div class="fw-semibold mb-2"><i class="bi bi-lightbulb me-1" style="color:var(--cc-accent)"></i>Why this matches</div>
-            <ul v-if="meet.matchReasons.length" class="mb-0 ps-3">
+
+    <div v-if="loading" class="py-5 text-center">
+      <div class="spinner-border" role="status"></div>
+      <p class="mt-2">Finding your best meets…</p>
+    </div>
+    <div v-else-if="!recommendations.length" class="alert alert-info">
+      No meets found. Try changing your region or interests.
+    </div>
+    <div v-else class="row g-4 mb-5">
+      <div v-for="meet in recommendations" :key="meet.id" class="col-md-6 col-xl-4 d-flex">
+        <div class="d-flex flex-column w-100">
+          <div class="position-relative flex-grow-1 d-flex flex-column">
+            <div class="position-absolute top-0 end-0 m-2 badge text-bg-success shadow-sm" style="z-index:2">
+              {{ meet.matchScore }}% match
+            </div>
+            <MeetCard :meet="meet" class="flex-grow-1" />
+          </div>
+          <div class="rounded-4 p-3 mt-2 small" style="background:var(--cc-surface);border:1px solid var(--cc-border)">
+            <div class="fw-semibold mb-2">
+              <i class="bi bi-lightbulb me-1" style="color:var(--cc-accent)"></i>Why this matches
+            </div>
+            <ul v-if="meet.matchReasons.length" class="mb-2 ps-3 text-secondary">
               <li v-for="reason in meet.matchReasons" :key="reason">{{ reason }}</li>
             </ul>
-            <span v-else class="text-secondary">It is a general suggestion based on your current filters.</span>
+            <p v-else class="text-secondary mb-2">It is a general suggestion based on your current filters.</p>
+            <button
+              type="button"
+              class="btn btn-sm btn-cc-outline rounded-pill w-100 mt-1"
+              @click="router.push(`/meets/${meet.id}`)"
+            >
+              View meet details <i class="bi bi-arrow-right ms-1"></i>
+            </button>
           </div>
-          <button class="btn btn-sm btn-outline-dark w-100 mt-2" @click="router.push(`/meets/${meet.id}`)">View meet details <i class="bi bi-arrow-right ms-1"></i></button>
         </div>
       </div>
     </div>
 
-    <section v-if="topComparisons.length" class="mt-5">
-      <div class="mb-3">
-        <h3 class="h4 fw-bold mb-1">Compare your top 3</h3>
-        <p class="small mb-0" style="color:var(--cc-muted)">A quick side-by-side look at your strongest matches.</p>
+    <section v-if="topComparisons.length" class="cc-tile mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+          <span class="cc-bracket-label">[ TOP 3 // SIDE-BY-SIDE COMPARISON ]</span>
+          <h3 class="h5 fw-bold mb-0">Compare your top 3</h3>
+          <p class="small text-secondary mb-0">A quick side-by-side look at your strongest matches.</p>
+        </div>
       </div>
-      <div class="table-responsive rounded-4" style="border:1px solid var(--cc-border)">
+      <div class="table-responsive">
         <table class="table align-middle mb-0">
-          <thead><tr><th>Meet</th><th>Match</th><th>Region</th><th>Atmosphere</th><th>Interest match</th></tr></thead>
+          <thead>
+            <tr class="small text-secondary">
+              <th>Meet</th>
+              <th>Match</th>
+              <th>Region</th>
+              <th>Atmosphere</th>
+              <th>Interest match</th>
+              <th class="text-end">Details</th>
+            </tr>
+          </thead>
           <tbody>
             <tr v-for="meet in topComparisons" :key="`compare-${meet.id}`">
-              <td class="fw-semibold">{{ meet.title }}</td>
+              <td class="fw-semibold">
+                <router-link :to="`/meets/${meet.id}`" class="text-reset text-decoration-none">
+                  {{ meet.title }}
+                </router-link>
+              </td>
               <td><span class="badge text-bg-success">{{ meet.matchScore }}%</span></td>
               <td>{{ meet.region || 'Not specified' }}</td>
               <td>{{ meet.vibe || 'Not specified' }}</td>
               <td>{{ meet.scoreBreakdown.find((item) => item.label === 'Interests')?.detail || 'Not selected' }}</td>
+              <td class="text-end">
+                <router-link :to="`/meets/${meet.id}`" class="btn btn-sm btn-cc-outline rounded-pill px-3 text-nowrap">
+                  View details <i class="bi bi-arrow-right ms-1"></i>
+                </router-link>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
-  </section>
+  </div>
 </template>

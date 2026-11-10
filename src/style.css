@@ -285,17 +285,18 @@ textarea.user-valid-fallback {
 /* Floating pill navigation */
 .cc-nav-wrap { position: sticky; top: 0.75rem; z-index: 1030; padding: 0 0.75rem; }
 .cc-nav {
-  background: color-mix(in srgb, var(--cc-surface) 82%, transparent);
+  background: color-mix(in srgb, var(--cc-surface) 88%, transparent);
   backdrop-filter: blur(14px);
   border: 1px solid var(--cc-border);
   border-radius: 999px;
-  padding: 0.4rem 0.6rem 0.4rem 1rem;
+  padding: 0.35rem 0.65rem 0.35rem 0.85rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  width: 100%;
 }
 .cc-nav .nav-link {
   border-radius: 999px;
-  padding: 0.4rem 0.85rem;
-  font-size: 0.88rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.84rem;
   font-weight: 600;
   color: var(--cc-text-muted);
   white-space: nowrap;
@@ -306,10 +307,17 @@ textarea.user-valid-fallback {
   background: var(--cc-text);
   color: var(--cc-bg) !important;
 }
-@media (max-width: 991.98px) {
+@media (max-width: 1199.98px) {
   .cc-nav { border-radius: 1.5rem; }
 }
-
+@media (min-width: 1200px) {
+  .cc-nav .navbar-collapse { flex-wrap: nowrap; min-width: 0; }
+  .cc-nav .navbar-nav { flex-wrap: nowrap; gap: 0.15rem; }
+  .cc-nav-actions { white-space: nowrap; flex-shrink: 0; }
+}
+@media (min-width: 1200px) and (max-width: 1499.98px) {
+  .cc-nav .nav-link { padding: 0.32rem 0.48rem; font-size: 0.79rem; }
+}
 /* Editorial hero */
 .cc-hero2 {
   position: relative;

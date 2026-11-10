@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Cars & Coffee \u2014 Social Car Meet & Community Spotting Platform (COS30043 Project)",
+  "description": "Cars & Coffee — Social Car Meet & Community Spotting Platform (COS30043 Project)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -32,8 +32,8 @@
     "@vitejs/plugin-vue": "^5.1.4",
     "@vue/test-utils": "^2.4.6",
     "jsdom": "^25.0.1",
-    "vite": "^8.3.6",
+    "vite": "^5.4.10",
     "vite-plugin-pwa": "^0.21.0",
-    "vitest": "^5.1.0"
+    "vitest": "^2.1.4"
   }
 }

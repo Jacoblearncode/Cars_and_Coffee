@@ -11,3 +11,6 @@ api/config.local.php
 *.docx
 *.pdf
 
+# IDE agent cache
+.agents/
+

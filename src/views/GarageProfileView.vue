@@ -162,21 +162,6 @@ onMounted(async () => {
 
       <!-- Right Column: My Hosted Meets & My Spotting Posts -->
       <div class="col-lg-6">
-        <!-- 3D Configurator Showcase Card -->
-        <div class="cc-tile mb-4">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="cc-bracket-label">[ 3D VISUALIZER // GARAGE LAB ]</span>
-            <span class="badge cc-badge-accent font-mono"><i class="bi bi-sliders me-1"></i>THREE.JS</span>
-          </div>
-          <h2 class="h5 fw-bold mb-2">Interactive 3D Dream Ride Configurator</h2>
-          <p class="text-secondary small mb-3">
-            Select custom paint finishes, swap wheel specs, and test performance mods in real-time 3D before exporting your build sheet.
-          </p>
-          <router-link to="/configurator" class="btn btn-sm btn-cc-primary rounded-pill px-3">
-            <i class="bi bi-box-arrow-up-right me-1"></i>Launch 3D Configurator
-          </router-link>
-        </div>
-
         <div class="cc-tile mb-4">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <div>

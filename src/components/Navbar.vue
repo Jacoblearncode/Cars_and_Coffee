@@ -118,11 +118,6 @@ onUnmounted(() => {
               </router-link>
             </li>
             <li class="nav-item">
-              <router-link to="/configurator" class="nav-link" @click="closeMenu">
-                <i class="bi bi-box me-1" style="color: var(--cc-accent)"></i>3D Lab
-              </router-link>
-            </li>
-            <li class="nav-item">
               <router-link to="/feed" class="nav-link" @click="closeMenu">
                 <AppIcon name="spotting" class="me-1" />Spotting
               </router-link>

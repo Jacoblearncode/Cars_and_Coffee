@@ -17,7 +17,6 @@ import SavedMeetsView from '../views/SavedMeetsView.vue'
 import GarageProfileView from '../views/GarageProfileView.vue'
 import InsightsView from '../views/InsightsView.vue'
 import SmartRecommendationsView from '../views/SmartRecommendationsView.vue'
-import BuildConfiguratorView from '../views/BuildConfiguratorView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 
@@ -81,12 +80,6 @@ export const routes = [
     name: 'garage',
     component: GarageProfileView,
     meta: { title: 'My Garage & Profile — Cars & Coffee', requiresAuth: true }
-  },
-  {
-    path: '/configurator',
-    name: 'configurator',
-    component: BuildConfiguratorView,
-    meta: { title: '3D Garage Lab — Cars & Coffee', access: 'public' }
   },
   {
     path: '/checkin',

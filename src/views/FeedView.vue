@@ -111,8 +111,38 @@ async function handleAddPostComment(postId) {
 }
 
 function canEditPost(post) {
-  if (!authStore.isAuthenticated) return false
-  return Number(post.user_id) === Number(authStore.user.id) || authStore.isAdmin
+  const user = authStore.user
+
+  if (!authStore.isAuthenticated || !user || !post) {
+    return false
+  }
+
+  const isAuthor = Number(post.user_id) === Number(user.id)
+  const isAdmin = user.role === 'admin'
+
+  return isAuthor || isAdmin
+}
+
+function canDeleteComment(comment) {
+  const user = authStore.user
+
+  if (!authStore.isAuthenticated || !user || !comment) {
+    return false
+  }
+
+  const isAuthor = Number(comment.user_id) === Number(user.id)
+  const isAdmin = user.role === 'admin'
+
+  return isAuthor || isAdmin
+}
+
+async function handleDeleteComment(commentId, postId) {
+  try {
+    await meetStore.deleteComment(commentId, 'post', postId)
+    showToast('Comment deleted successfully.')
+  } catch (err) {
+    showToast(err.message || 'Could not delete comment.', 'danger')
+  }
 }
 
 watch(sortBy, () => {
@@ -355,15 +385,25 @@ onMounted(async () => {
 
             <!-- Inline Comments -->
             <div class="cc-panel p-2 px-3 mt-auto">
-              <div v-if="post.comments && post.comments.length" class="mb-2">
-                <div
-                  v-for="c in post.comments"
-                  :key="c.id"
-                  class="small py-1 border-bottom border-secondary border-opacity-10"
-                >
-                  <strong>{{ c.user_name }}:</strong> {{ c.body }}
-                </div>
-              </div>
+            <div
+            v-for="c in post.comments"
+            :key="c.id"
+            class="small py-2 border-bottom border-secondary border-opacity-10 d-flex justify-content-between align-items-start gap-2"
+            >
+            <div>
+            <strong>{{ c.user_name }}:</strong> {{ c.body }}
+            </div>
+            <button
+            v-if="canDeleteComment(c)"
+            type="button"
+            class="btn btn-sm btn-link text-danger p-0 flex-shrink-0"
+            aria-label="Delete comment"
+            title="Delete comment"
+            @click="handleDeleteComment(c.id, post.id)"
+            >
+            <i class="bi bi-trash"></i>
+            </button>
+            </div>
 
               <form
                 v-if="authStore.isAuthenticated"

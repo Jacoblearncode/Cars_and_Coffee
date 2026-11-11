@@ -30,12 +30,24 @@ const commentRating = ref(5)
 const meet = computed(() => meetStore.currentMeet)
 
 const canModifyMeet = computed(() => {
-  if (!authStore.isAuthenticated || !meet.value) return false
-  return (
-    Number(meet.value.host_id) === Number(authStore.user.id) ||
-    authStore.user.role === 'admin'
-  )
+  const user = authStore.user
+  const currentMeet = meet.value
+
+  if (!authStore.isAuthenticated || !user || !currentMeet) {
+    return false
+  }
+
+  const isAdmin = user.role === 'admin'
+  const isHost = Number(currentMeet.host_id) === Number(user.id)
+
+  return isAdmin || isHost
 })
+
+// Host/admin-only visual preview. This does not change authentication.
+const privacyPreview = ref('member')
+const isGuestPrivacyPreview = computed(
+  () => canModifyMeet.value && privacyPreview.value === 'guest'
+)
 
 const myRsvp = computed(() => {
   if (!authStore.isAuthenticated || !meet.value || !Array.isArray(meet.value.rsvps)) return null
@@ -290,14 +302,56 @@ onMounted(() => {
 
                 <hr class="my-3 opacity-25" />
 
+                <!-- Privacy Shield Preview Controls -->
+                <div
+                  v-if="canModifyMeet"
+                  class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"
+                >
+                  <div>
+                    <strong class="small">
+                      <i class="bi bi-shield-lock me-1"></i>
+                      Privacy Shield Preview
+                    </strong>
+                    <div class="text-secondary small">
+                      Preview how your meet appears to different visitors.
+                    </div>
+                  </div>
+
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Privacy preview mode">
+                    <button
+                      type="button"
+                      class="btn"
+                      :class="privacyPreview === 'guest' ? 'btn-warning' : 'btn-cc-outline'"
+                      :aria-pressed="privacyPreview === 'guest'"
+                      @click="privacyPreview = 'guest'"
+                    >
+                      <i class="bi bi-eye me-1"></i>Guest Preview
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn"
+                      :class="privacyPreview === 'member' ? 'btn-success' : 'btn-cc-outline'"
+                      :aria-pressed="privacyPreview === 'member'"
+                      @click="privacyPreview = 'member'"
+                    >
+                      <i class="bi bi-unlock me-1"></i>Member Preview
+                    </button>
+                  </div>
+                </div>
+
                 <!-- Authenticated Member vs Guest Visibility Check -->
-                <div v-if="authStore.isAuthenticated || isOfflineSnapshot" class="row g-3">
+                <div
+                  v-if="authStore.isAuthenticated && !isGuestPrivacyPreview"
+                  class="row g-3"
+                >
                   <div class="col-md-7">
                     <span class="badge text-bg-success mb-1">
                       <i class="bi bi-unlock-fill me-1"></i>Member Parking &amp; Ramp Notes
                     </span>
                     <p class="small mb-0">{{ meet.parking_note }}</p>
                   </div>
+
                   <div class="col-md-5">
                     <span class="badge text-bg-info mb-1">Host Direct Contact</span>
                     <p class="small mb-0 font-mono">{{ meet.host_contact }}</p>
@@ -314,9 +368,22 @@ onMounted(() => {
                     <strong>Member Privacy Shield:</strong> Exact parking bay entry notes, low-car
                     ramp guidance, and host contact are reserved for signed-in members.
                   </div>
-                  <router-link to="/login" class="btn btn-sm btn-cc-primary cc-pill-btn">
+
+                  <router-link
+                    v-if="!authStore.isAuthenticated"
+                    to="/login"
+                    class="btn btn-sm btn-cc-primary cc-pill-btn"
+                  >
                     Sign In to Unlock
                   </router-link>
+
+                  <span
+                    v-else
+                    class="btn btn-sm btn-cc-primary cc-pill-btn disabled"
+                    aria-disabled="true"
+                  >
+                    Sign In to Unlock
+                  </span>
                 </div>
               </div>
 

@@ -122,7 +122,13 @@ describe('Cars & Coffee — Core Architecture, APIs & Stores Suite', () => {
     const comment = await meetStore.addComment('post', newPost.id, 'Love the pop-up headlights!')
     expect(comment.body).toBe('Love the pop-up headlights!')
 
-    await meetStore.deletePost(newPost.id)
+    await meetStore.deleteComment(comment.id, 'post', newPost.id)
+    const updatedPost = meetStore.posts.find(
+      (p) => Number(p.id) === Number(newPost.id)
+    )
+    expect(
+      updatedPost.comments.some((c) => Number(c.id) === Number(comment.id))
+    ).toBe(false)
   })
 
   it('imports 2026 event metadata via Smart Event Link Importer (`import-link`)', async () => {

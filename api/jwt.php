@@ -67,6 +67,20 @@ function jwt_decode($token, $secret = JWT_SECRET) {
 }
 
 function get_bearer_token() {
+    // Preferred: custom header (Mercury's web server may consume/strip Authorization).
+    if (!empty($_SERVER['HTTP_X_AUTH_TOKEN'])) {
+        return trim($_SERVER['HTTP_X_AUTH_TOKEN']);
+    }
+    if (function_exists('apache_request_headers')) {
+        $allHeaders = apache_request_headers();
+        foreach ($allHeaders as $hName => $hValue) {
+            if (strtolower($hName) === 'x-auth-token' && $hValue !== '') {
+                return trim($hValue);
+            }
+        }
+    }
+
+    // Fallback: standard Authorization: Bearer <token>
     $authHeader = '';
     if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
         $authHeader = $_SERVER['HTTP_AUTHORIZATION'];

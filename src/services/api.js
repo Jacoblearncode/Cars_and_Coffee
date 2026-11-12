@@ -109,7 +109,10 @@ async function phpFetch(method, endpoint, { params = {}, body = null } = {}) {
 
   const headers = { 'Content-Type': 'application/json' }
   if (token) {
-    headers.Authorization = `Bearer ${token}`
+    // Mercury's web server can apply its own HTTP auth to the Authorization header (and can strip
+    // it before PHP runs), which made every logged-in API call return 401. The app token therefore
+    // travels in a custom header that the web server leaves alone.
+    headers['X-Auth-Token'] = token
   }
 
   const controller = new AbortController()
